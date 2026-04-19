@@ -43,3 +43,6 @@ Thumbs.db
 tmp/
 temp/
 *.tmp
+
+# AI Collaboration
+AI-COLLAB.md
