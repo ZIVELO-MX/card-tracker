@@ -7,11 +7,8 @@ function EscudoArt({ countryColor = '#1E3A5F', state = 'have' }) {
     <svg viewBox="0 0 64 64" width="100%" height="100%" style={{ display: 'block' }}>
       <path d="M32 6 L56 16 L56 34 Q56 52 32 60 Q8 52 8 34 L8 16 Z" fill={c} opacity={state === 'missing' ? 0.15 : 0.25}/>
       <path d="M32 6 L56 16 L56 34 Q56 52 32 60 Q8 52 8 34 L8 16 Z" fill="none" stroke={c} strokeWidth="2.5" opacity={state === 'missing' ? 0.3 : 0.9}/>
-      {state !== 'missing' && <>
-        <line x1="32" y1="10" x2="32" y2="58" stroke={c} strokeWidth="1.5" opacity="0.4"/>
-        <line x1="10" y1="26" x2="54" y2="26" stroke={c} strokeWidth="1.5" opacity="0.4"/>
-      </>}
-      {state === 'missing' && <text x="32" y="37" textAnchor="middle" fontSize="18" fill={SK.textDim}>?</text>}
+      <line x1="32" y1="10" x2="32" y2="58" stroke={c} strokeWidth="1.5" opacity="0.4"/>
+      <line x1="10" y1="26" x2="54" y2="26" stroke={c} strokeWidth="1.5" opacity="0.4"/>
     </svg>
   );
 }
@@ -25,15 +22,12 @@ function EquipoArt({ countryColor = '#1E3A5F', state = 'have', variant = 0 }) {
   return (
     <svg viewBox="0 0 64 64" width="100%" height="100%" style={{ display: 'block' }}>
       <rect x="0" y="54" width="64" height="10" fill={c} opacity="0.12"/>
-      {state === 'missing'
-        ? <text x="32" y="37" textAnchor="middle" fontSize="18" fill={SK.textDim}>?</text>
-        : positions.map(([x, y], i) => (
-          <g key={i} fill={c} opacity={0.7 + (i % 3) * 0.1}>
-            <ellipse cx={x} cy={y - 7} rx="3.5" ry="4"/>
-            <rect x={x - 4} y={y - 3} width="8" height="9" rx="2"/>
-          </g>
-        ))
-      }
+      {positions.map(([x, y], i) => (
+        <g key={i} fill={c} opacity={0.7 + (i % 3) * 0.1}>
+          <ellipse cx={x} cy={y - 7} rx="3.5" ry="4"/>
+          <rect x={x - 4} y={y - 3} width="8" height="9" rx="2"/>
+        </g>
+      ))}
     </svg>
   );
 }
@@ -41,11 +35,6 @@ function EquipoArt({ countryColor = '#1E3A5F', state = 'have', variant = 0 }) {
 // Especial artwork — trophy / stadium / event icons
 function EspecialArt({ subtype = 'trophy', state = 'have' }) {
   const c = state === 'missing' ? SK.textDim : SK.gold;
-  if (state === 'missing') return (
-    <svg viewBox="0 0 64 64" width="100%" height="100%" style={{ display: 'block' }}>
-      <text x="32" y="37" textAnchor="middle" fontSize="18" fill={SK.textDim}>?</text>
-    </svg>
-  );
   if (subtype === 'trophy') return (
     <svg viewBox="0 0 64 64" width="100%" height="100%" style={{ display: 'block' }}>
       <path d="M20 10 H44 V30 Q44 46 32 50 Q20 46 20 30 Z" fill={c} opacity="0.25"/>
@@ -103,86 +92,99 @@ function StickerArt({ seed = 0, countryColor = '#1E3A5F', state = 'have' }) {
 
 // Sticker card — the central visual element
 function StickerCard({ num, country, player, state, count = 1, size = 'md', type = 'jugador', subtype, onClick }) {
+  const [hov, setHov] = React.useState(false);
   const sizes = {
-    sm: { p: 6, fNum: 9, fName: 8, fCountry: 7 },
-    md: { p: 8, fNum: 11, fName: 10, fCountry: 8 },
-    lg: { p: 10, fNum: 13, fName: 12, fCountry: 10 },
+    sm: { p: 6,  fNum: 15, fName: 8,  fBanner: 7  },
+    md: { p: 8,  fNum: 20, fName: 9,  fBanner: 8  },
+    lg: { p: 10, fNum: 26, fName: 11, fBanner: 10 },
   };
   const s = sizes[size];
 
-  const typeColors = {
+  // Per-type accent colours — each type has a distinct identity
+  const typeAccent = {
+    jugador:  SK.gold,
     escudo:   SK.gold,
     equipo:   '#6EE7F9',
-    especial: SK.gold,
-    jugador:  SK.gold,
+    especial: '#C084FC',   // purple for special/event stickers
+    foil:     SK.gold,     // foil uses gold + glow
   };
-  const accentColor = state === 'missing' ? SK.border : typeColors[type] || SK.gold;
-  const border = state === 'missing'
-    ? `1px dashed ${SK.border}`
-    : type === 'escudo' ? `2px solid ${SK.gold}`
-    : type === 'equipo' ? `2px solid #6EE7F9`
-    : type === 'especial' ? `2px solid ${SK.gold}`
-    : `2px solid ${SK.gold}`;
-  const bg = state === 'missing' ? SK.bgSoft : SK.surface;
-  const numColor = state === 'missing' ? SK.textMute : accentColor;
+  const accentColor = state === 'missing' ? SK.border : (typeAccent[type] || SK.gold);
+
+   const getBorder = () => {
+     if (state === 'missing') return `1px solid ${SK.border}`;
+     if (type === 'equipo')   return `2px solid #6EE7F9`;
+     if (type === 'especial') return `2px solid #C084FC`;
+     return `2px solid ${SK.gold}`;  // jugador, escudo, foil
+   };
+
+   const bg = state === 'missing' ? SK.bgSoft : SK.surface;
+   const numColor = state === 'missing' ? SK.textDim : accentColor;
 
   const renderArt = () => {
-    if (state === 'missing') return (
-      <div style={{
-        width: '80%', aspectRatio: 1,
-        border: `1px dashed ${SK.textDim}`, borderRadius: 4,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        color: SK.textDim, fontSize: 20,
-      }}>?</div>
-    );
     if (type === 'escudo')   return <EscudoArt countryColor={country?.color || SK.gold} state={state}/>;
     if (type === 'equipo')   return <EquipoArt countryColor={country?.color || SK.gold} state={state} variant={num % 2}/>;
-    if (type === 'especial') return <EspecialArt subtype={subtype || (num % 2 === 0 ? 'stadium' : 'trophy')} state={state}/>;
+    if (type === 'especial' || type === 'foil')
+                             return <EspecialArt subtype={subtype || (num % 2 === 0 ? 'stadium' : 'trophy')} state={state}/>;
     return <StickerArt seed={num} countryColor={country?.color || SK.gold} state={state}/>;
   };
 
-  const typeLabel = { escudo: 'ESC', equipo: 'EQP', especial: 'ESP', jugador: null };
+  const typeLabel = { jugador: null, escudo: 'ESC', equipo: 'EQP', especial: 'ESP', foil: 'FOIL' };
+
+  // Foil stickers get a persistent ambient glow
+   const foilGlow = (type === 'foil' && state !== 'missing')
+     ? `0 0 14px 3px ${SK.gold}35, inset 0 0 10px ${SK.gold}12`
+     : '';
+   const cardShadow = state === 'missing'
+     ? '0 6px 16px -10px rgba(0,0,0,0.5)'
+     : '0 10px 24px -12px rgba(0,0,0,0.65)';
+   const hovShadow = (hov && state !== 'missing')
+     ? `0 10px 26px -10px rgba(0,0,0,0.7), 0 0 0 1px ${accentColor}35`
+     : '';
+   const boxShadow = [cardShadow, foilGlow, hovShadow].filter(Boolean).join(', ') || 'none';
+
+  // Country banner background uses country team colour at low opacity
+  const bannerBg = (country?.color && state !== 'missing')
+    ? `${country.color}28`
+    : `${SK.surfaceHi}80`;
 
   return (
     <div
       onClick={onClick}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
       style={{
         position: 'relative',
         aspectRatio: '0.72',
-        borderRadius: 8,
-        border,
+        borderRadius: 10,
+        border: getBorder(),
         background: bg,
-        padding: s.p,
         display: 'flex',
         flexDirection: 'column',
         cursor: onClick ? 'pointer' : 'default',
         opacity: state === 'missing' ? 0.85 : 1,
-        transition: 'transform 0.15s ease',
+        transform: hov && state !== 'missing' ? 'translateY(-3px) scale(1.03)' : 'none',
+        boxShadow,
+        transition: 'transform 0.15s ease-out, box-shadow 0.15s ease-out, opacity 0.15s ease-out',
         overflow: 'hidden',
       }}
     >
-      {/* Type badge top-right */}
-      {typeLabel[type] && state !== 'missing' && (
-        <div style={{
-          position: 'absolute', top: s.p, right: s.p,
-          fontFamily: SK.fMono, fontSize: 7, fontWeight: 700,
-          color: accentColor, letterSpacing: 0.5,
-          background: `${accentColor}18`, padding: '1px 4px', borderRadius: 3,
-        }}>{typeLabel[type]}</div>
-      )}
-
-      {/* Number top-left */}
       <div style={{
-        fontFamily: SK.fMono, fontSize: s.fNum, fontWeight: 700,
-        color: numColor, letterSpacing: 0.5,
-      }}>
-        {String(num).padStart(3, '0')}
-      </div>
-
+        position: 'absolute', inset: 0,
+        background: state === 'missing'
+          ? 'linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(0,0,0,0.18) 100%)'
+          : 'linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(0,0,0,0.12) 100%)',
+        pointerEvents: 'none',
+      }}/>
+      <div style={{
+        position: 'absolute', inset: 6,
+        borderRadius: 7,
+        border: state === 'missing' ? `1px solid ${SK.border}66` : `1px solid ${accentColor}22`,
+        pointerEvents: 'none',
+      }}/>
       {/* Repetida badge */}
       {state === 'duplicate' && (
         <div style={{
-          position: 'absolute', top: -6, right: -6,
+          position: 'absolute', top: -6, right: -6, zIndex: 2,
           background: SK.coral, color: '#fff',
           fontFamily: SK.fMono, fontSize: 10, fontWeight: 700,
           minWidth: 22, height: 22, borderRadius: 11,
@@ -194,29 +196,83 @@ function StickerCard({ num, country, player, state, count = 1, size = 'md', type
         </div>
       )}
 
-      {/* Artwork */}
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 2 }}>
-        {renderArt()}
+       {/* Top bar — prominent number (left) + type badge (right) */}
+       <div style={{
+         display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+         padding: `${s.p}px ${s.p}px 0`,
+       }}>
+         <div style={{
+           fontFamily: SK.fMono, fontSize: s.fNum, fontWeight: 800,
+           color: numColor, letterSpacing: -0.5, lineHeight: 1,
+           textShadow: state === 'missing' ? 'none' : `0 1px 10px ${accentColor}35`,
+         }}>
+           {String(num).padStart(3, '0')}
+         </div>
+         {typeLabel[type] && state !== 'missing' && (
+           <div style={{
+             fontFamily: SK.fMono, fontSize: 7, fontWeight: 700,
+             color: accentColor, letterSpacing: 0.5,
+             background: `${accentColor}18`, padding: '2px 4px', borderRadius: 3,
+             marginTop: 2,
+           }}>{typeLabel[type]}</div>
+         )}
+       </div>
+
+      {/* Player name — below number, above artwork */}
+      <div style={{
+        padding: `3px ${s.p}px 0`,
+        fontFamily: SK.fBody, fontSize: s.fName, fontWeight: 600,
+        color: state === 'missing' ? SK.textMute : SK.text,
+        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+        textTransform: 'uppercase', letterSpacing: 0.3,
+      }}>
+        {player}
       </div>
 
-      {/* Name + country */}
-      <div style={{ marginTop: 'auto', paddingTop: 4 }}>
-        <div style={{
-          fontFamily: SK.fBody, fontSize: s.fName, fontWeight: 600,
-          color: state === 'missing' ? SK.textMute : SK.text,
-          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-          textTransform: 'uppercase', letterSpacing: 0.3,
-        }}>
-          {state === 'missing' ? '— — —' : player}
-        </div>
-        {country && (
-          <div style={{
-            fontFamily: SK.fBody, fontSize: s.fCountry, color: SK.textMute,
-            display: 'flex', alignItems: 'center', gap: 3, marginTop: 1,
+      {/* Artwork */}
+       <div style={{
+         flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+         padding: `4px ${s.p}px`,
+       }}>
+         <div style={{
+           width: '100%', height: '100%',
+           borderRadius: 8,
+           background: state === 'missing' ? `${SK.bgSoft}AA` : `${SK.surfaceHi}99`,
+           border: `1px solid ${accentColor}18`,
+           display: 'flex', alignItems: 'center', justifyContent: 'center',
+           boxShadow: state === 'missing' ? 'none' : `inset 0 0 12px ${accentColor}10`,
+         }}>
+           {renderArt()}
+         </div>
+       </div>
+
+      {/* Country banner — full-width strip at the bottom */}
+      <div style={{
+        background: bannerBg,
+        borderTop: `1px solid ${state === 'missing' ? SK.border : accentColor}22`,
+        padding: `3px ${s.p}px 5px`,
+        display: 'flex', alignItems: 'center', gap: 4,
+      }}>
+        {country ? (
+          <>
+            <span style={{ fontSize: s.fBanner + 3, lineHeight: 1 }}>{country.flag}</span>
+            <span style={{
+              fontFamily: SK.fBody, fontSize: s.fBanner, fontWeight: 700,
+              color: state === 'missing' ? SK.textDim : SK.textMute,
+              textTransform: 'uppercase', letterSpacing: 0.6,
+              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+            }}>
+              {country.name}
+            </span>
+          </>
+        ) : (
+          <span style={{
+            fontFamily: SK.fMono, fontSize: s.fBanner, fontWeight: 700,
+            color: state === 'missing' ? SK.textDim : accentColor,
+            letterSpacing: 0.6, textTransform: 'uppercase',
           }}>
-            <span style={{ fontSize: s.fCountry + 2 }}>{country.flag}</span>
-            <span>{country.code}</span>
-          </div>
+            {type === 'especial' ? 'ESPECIAL' : type === 'foil' ? 'FOIL' : 'GLOBAL'}
+          </span>
         )}
       </div>
     </div>
@@ -247,6 +303,34 @@ function Logo({ size = 28, color }) {
       }}>
         stickio
       </span>
+    </div>
+  );
+}
+
+function LoadingSpinner({ size = 24 }) {
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: '50%',
+      border: `3px solid ${SK.border}`,
+      borderTopColor: SK.gold,
+      animation: 'spin 0.7s linear infinite',
+    }}/>
+  );
+}
+
+function EmptyState({ icon = '📭', title, sub }) {
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
+      justifyContent: 'center', gap: 10, padding: '40px 20px',
+      color: SK.textMute, textAlign: 'center',
+    }}>
+      <div style={{ fontSize: 36 }}>{icon}</div>
+      <div style={{
+        fontFamily: SK.fHead, fontSize: 16, fontWeight: 700,
+        color: SK.textMute, textTransform: 'uppercase', letterSpacing: 0.5,
+      }}>{title}</div>
+      {sub && <div style={{ fontSize: 12, color: SK.textDim }}>{sub}</div>}
     </div>
   );
 }
@@ -369,6 +453,26 @@ const Icon = {
       <path fill="#F5F5F5" d="M21.35 11.1h-9.17v2.73h6.51c-.33 3.81-3.5 5.44-6.5 5.44C8.36 19.27 5 16.25 5 12c0-4.1 3.2-7.27 7.2-7.27 3.09 0 4.9 1.97 4.9 1.97L19 4.72S16.56 2 12.1 2C6.42 2 2.03 6.8 2.03 12c0 5.05 4.13 10 10.22 10 5.35 0 9.25-3.67 9.25-9.09 0-1.15-.15-1.81-.15-1.81z"/>
     </svg>
   ),
+  Store: ({ s = 22, c = SK.textMute, filled }) => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill={filled ? c : 'none'} stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 9l1-5h16l1 5"/>
+      <path d="M3 9a2 2 0 0 0 2 2 2 2 0 0 0 2-2 2 2 0 0 0 2 2 2 2 0 0 0 2-2 2 2 0 0 0 2 2 2 2 0 0 0 2-2"/>
+      <path d="M5 21V11m14 0v10"/>
+      <rect x="9" y="14" width="6" height="7" rx="1"/>
+    </svg>
+  ),
+  Tag: ({ s = 16, c = SK.textMute }) => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+      <line x1="7" y1="7" x2="7.01" y2="7"/>
+    </svg>
+  ),
+  X: ({ s = 16, c = SK.textMute }) => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.5" strokeLinecap="round">
+      <line x1="18" y1="6" x2="6" y2="18"/>
+      <line x1="6" y1="6" x2="18" y2="18"/>
+    </svg>
+  ),
 };
 
 // Flag "chip" — rounded rectangle with flag emoji or CSS stripes
@@ -389,4 +493,5 @@ Object.assign(window, {
   StickerArt, EscudoArt, EquipoArt, EspecialArt,
   StickerCard, LogoMark, Logo,
   ProgressBar, DonutProgress, Icon, FlagChip,
+  LoadingSpinner, EmptyState,
 });
