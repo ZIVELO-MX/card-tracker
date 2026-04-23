@@ -2,12 +2,13 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=1440">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Stickio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@500;600;700&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="icon" href="img/stickio-favicon.svg" type="image/svg+xml">
+<link rel="icon" href="img/stickio-favicon.png" type="image/png">
 <style>
   html, body {
     margin: 0; padding: 0;
@@ -16,19 +17,31 @@
     width: 100vw; height: 100vh;
   }
   * { box-sizing: border-box; }
-  ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-thumb { background: rgba(138,149,168,0.25); border-radius: 3px; }
+  ::-webkit-scrollbar { width: 0; height: 0; }
+  ::-webkit-scrollbar-thumb { background: transparent; }
   ::-webkit-scrollbar-track { background: transparent; }
+  * { scrollbar-width: none; }
   input::placeholder { color: #5A6778; }
   button:active { transform: scale(0.98); }
+  button { transition: background 0.15s ease-out, color 0.15s ease-out, border-color 0.15s ease-out, opacity 0.15s ease-out; }
   @keyframes scan {
     0%, 100% { top: 30px; }
     50% { top: calc(100% - 32px); }
   }
+  @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
 <div id="root"></div>
+
+<script>
+  window.SUPABASE_URL = 'https://inkessfnpadmvsgbmuzq.supabase.co';
+  window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlua2Vzc2ZucGFkbXZzZ2JtdXpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MTQ1NzgsImV4cCI6MjA5MjM5MDU3OH0.WaziZXriPzKA2K7A-ltqc4jCXqsP8RUWn0VjyoRR6Hg';
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+  window.supabase = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+</script>
 
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
@@ -42,15 +55,21 @@
 <script type="text/babel" src="components/mobile-2.jsx"></script>
 <script type="text/babel" src="components/desktop.jsx"></script>
 <script type="text/babel" src="components/desktop-2.jsx"></script>
+<script type="text/babel" src="components/desktop-3.jsx"></script>
+<script type="text/babel" src="components/theme-and-modal.jsx"></script>
 
 <script type="text/babel">
 // Override Logo with the actual SVG asset (on-dark variant)
+window.__theme = 'dark';
 window.Logo = function Logo({ size = 28 }) {
   const h = size * 2;
   const w = Math.round(h * (400 / 120));
+  const logoSrc = window.__theme === 'light'
+    ? 'img/stickio-logo-horizontal.svg'
+    : 'img/stickio-logo-on-dark.svg';
   return (
     <img
-      src="img/stickio-logo-on-dark.svg"
+      src={logoSrc}
       alt="Stickio"
       width={w}
       height={h}
@@ -59,22 +78,696 @@ window.Logo = function Logo({ size = 28 }) {
   );
 };
 
-const stats = { have: 247, total: 980, missing: 733, duplicates: 23 };
+function computeStats(collection) {
+  const TOTAL = 992; // 20 FWC + 960 países (48×20) + 12 CC
+  let have = 0, duplicates = 0;
+  Object.values(collection).forEach(qty => {
+    if (qty >= 1) have++;
+    if (qty >= 2) duplicates++;
+  });
+  const countriesComplete = COUNTRIES.reduce((acc, c) => {
+    const haveCount = Array.from({ length: 20 }, (_, i) =>
+      (collection[`${c.code}${String(i + 1).padStart(2, '0')}`] || 0) > 0 ? 1 : 0
+    ).reduce((a, b) => a + b, 0);
+    return acc + (haveCount === c.total ? 1 : 0);
+  }, 0);
+  return { have, total: TOTAL, missing: TOTAL - have, duplicates, countriesComplete };
+}
+
+function computeAchievements(collection, stats) {
+  const countryCompleteCount = COUNTRIES.reduce((acc, c) => {
+    const haveCount = Array.from({ length: 20 }, (_, i) =>
+      (collection[`${c.code}${String(i + 1).padStart(2, '0')}`] || 0) > 0 ? 1 : 0
+    ).reduce((a, b) => a + b, 0);
+    return acc + (haveCount === c.total ? 1 : 0);
+  }, 0);
+
+  const pct = stats.total ? stats.have / stats.total : 0;
+
+  return [
+    { id: 'first', label: 'Primera', desc: 'Estampa', unlocked: stats.have >= 1, icon: 'star' },
+    { id: 'pct25', label: '25%', desc: 'Del album', unlocked: pct >= 0.25, icon: 'pct' },
+    { id: 'pct50', label: '50%', desc: 'Del album', unlocked: pct >= 0.5, icon: 'pct' },
+    { id: 'complete', label: '100%', desc: 'Completo', unlocked: pct >= 1, icon: 'trophy' },
+    { id: 'dup5', label: '5', desc: 'Repetidas', unlocked: stats.duplicates >= 5, icon: 'swap' },
+    { id: 'dup20', label: '20', desc: 'Repetidas', unlocked: stats.duplicates >= 20, icon: 'swap' },
+    { id: 'country1', label: '1', desc: 'Pais completo', unlocked: countryCompleteCount >= 1, icon: 'star' },
+    { id: 'country5', label: '5', desc: 'Paises completos', unlocked: countryCompleteCount >= 5, icon: 'star' },
+  ];
+}
+
+const ACTIVITY_TYPES = {
+  add:     { icon: 'check',   label: (id) => `Añadiste la estampa ${id}` },
+  dup:     { icon: 'dup',     label: (id) => `Repetida detectada: ${id}` },
+  remove:  { icon: 'remove',  label: (id) => `Quitaste la estampa ${id}` },
+  listing: { icon: 'listing', label: () => 'Publicaste oferta de intercambio' },
+  closed:  { icon: 'closed',  label: () => 'Cerraste una oferta' },
+};
+
+function readActivityLog() {
+  try {
+    const raw = JSON.parse(localStorage.getItem('stickio_activity') || '[]');
+    return Array.isArray(raw) ? raw.slice(0, 20) : [];
+  } catch {
+    return [];
+  }
+}
+
+function logActivity(type, id = '') {
+  try {
+    const log = readActivityLog();
+    log.unshift({ type, id, ts: Date.now() });
+    localStorage.setItem('stickio_activity', JSON.stringify(log.slice(0, 20)));
+    window.dispatchEvent(new Event('stickio:activity-updated'));
+  } catch {}
+}
+
+function timeAgo(ts) {
+  if (!ts) return 'Hace un momento';
+  const s = Math.floor((Date.now() - ts) / 1000);
+  if (s < 60)    return 'Hace un momento';
+  if (s < 3600)  return `Hace ${Math.floor(s / 60)} min`;
+  if (s < 86400) return `Hace ${Math.floor(s / 3600)} h`;
+  return `Hace ${Math.floor(s / 86400)} d`;
+}
+
+const NOTIFICATION_TYPES = {
+  milestone_first:    { icon: '🎉' },
+  milestone_pct25:    { icon: '📈' },
+  milestone_pct50:    { icon: '⚡' },
+  milestone_pct75:    { icon: '🔥' },
+  milestone_complete: { icon: '🏆' },
+  country_complete:   { icon: '✅' },
+  duplicate_first:    { icon: '🔁' },
+  achievement:        { icon: '⭐' },
+};
+
+function notificationsStorageKey(userId = null) {
+  return userId ? `stickio_notifications_${userId}` : 'stickio_notifications_guest';
+}
+
+function setNotificationsUser(userId = null) {
+  window.__notifications_user_id = userId || null;
+}
+
+function getNotificationsUser() {
+  return window.__notifications_user_id || null;
+}
+
+function readNotifications(userId = getNotificationsUser()) {
+  try {
+    const raw = JSON.parse(localStorage.getItem(notificationsStorageKey(userId)) || '[]');
+    return Array.isArray(raw) ? raw : [];
+  } catch { return []; }
+}
+
+function pushNotification(type, text, userId = getNotificationsUser()) {
+  try {
+    const notifs = readNotifications(userId);
+    if (notifs.find(n => n.type === type && Date.now() - n.ts < 300000)) return;
+    notifs.unshift({ id: `${Date.now()}`, type, text, ts: Date.now(), read: false });
+    localStorage.setItem(notificationsStorageKey(userId), JSON.stringify(notifs.slice(0, 50)));
+    window.dispatchEvent(new Event('stickio:notification-added'));
+  } catch {}
+}
+
+function markAllRead(userId = getNotificationsUser()) {
+  try {
+    const notifs = readNotifications(userId).map(n => ({ ...n, read: true }));
+    localStorage.setItem(notificationsStorageKey(userId), JSON.stringify(notifs));
+    window.dispatchEvent(new Event('stickio:notification-updated'));
+  } catch {}
+}
+
+function getUnreadCount(userId = getNotificationsUser()) {
+  return readNotifications(userId).filter(n => !n.read).length;
+}
+
+async function proposeTrade(fromUserId, toUserId, fromItems, toItems) {
+  if (!window.supabase?.from) return { error: 'Sin conexión' };
+  const { data, error } = await window.supabase.from('trade_offers').insert({
+    from_user: fromUserId,
+    to_user: toUserId,
+    from_items: fromItems,
+    to_items: toItems,
+  }).select().single();
+  if (!error) pushNotification('achievement', '¡Propuesta enviada! Espera la respuesta del coleccionista.');
+  return { data, error };
+}
+
+async function respondToOffer(offerId, accept) {
+  if (!window.supabase?.from) return { error: 'Sin conexión' };
+  const status = accept ? 'accepted' : 'rejected';
+  const { data, error } = await window.supabase.from('trade_offers')
+    .update({ status, updated_at: new Date() })
+    .eq('id', offerId)
+    .select().single();
+  if (!error && accept) pushNotification('achievement', '¡Intercambio aceptado! Ya pueden hacer el canje.');
+  return { data, error };
+}
+
+async function cancelOffer(offerId) {
+  if (!window.supabase?.from) return { error: 'Sin conexión' };
+  return window.supabase.from('trade_offers')
+    .update({ status: 'cancelled', updated_at: new Date() })
+    .eq('id', offerId);
+}
+
+async function fetchTradeOffers(userId) {
+  if (!window.supabase?.from || !userId) return [];
+  const { data } = await window.supabase
+    .from('trade_offers')
+    .select('*, from_profile:from_user(username, display_name), to_profile:to_user(username, display_name)')
+    .or(`from_user.eq.${userId},to_user.eq.${userId}`)
+    .order('created_at', { ascending: false })
+    .limit(50);
+  return data || [];
+}
+
+async function fetchMarketplaceListings(userId = null) {
+  if (!window.supabase?.from) return [];
+  const { data: activeData } = await window.supabase
+    .from('marketplace_listings')
+    .select('*, profile:user_id(username, display_name, country_code, phone, whatsapp)')
+    .eq('status', 'active')
+    .order('created_at', { ascending: false })
+    .limit(100);
+
+  if (!userId) return activeData || [];
+
+  const { data: mineClosedData } = await window.supabase
+    .from('marketplace_listings')
+    .select('*, profile:user_id(username, display_name, country_code, phone, whatsapp)')
+    .eq('user_id', userId)
+    .eq('status', 'closed')
+    .order('created_at', { ascending: false })
+    .limit(100);
+
+  const byId = new Map();
+  [...(activeData || []), ...(mineClosedData || [])].forEach(item => {
+    if (!item?.id) return;
+    byId.set(item.id, item);
+  });
+  return Array.from(byId.values()).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+}
+
+async function createMarketplaceListing(userId, listing) {
+  if (!window.supabase?.from) return { error: 'Sin conexión' };
+  const { data, error } = await window.supabase.from('marketplace_listings').insert({
+    user_id: userId,
+    type: listing.type,
+    cards: listing.cards || [],
+    description: listing.description || '',
+    location: listing.location || null,
+    status: 'active',
+  }).select('*, profile:user_id(username, display_name, country_code, phone, whatsapp)').single();
+  if (!error) logActivity('listing', data?.id || '');
+  return { data, error };
+}
+
+async function closeMarketplaceListing(listingId) {
+  if (!window.supabase?.from) return { error: 'Sin conexión' };
+  const { error } = await window.supabase.from('marketplace_listings')
+    .update({ status: 'closed', updated_at: new Date() })
+    .eq('id', listingId);
+  if (!error) logActivity('closed', listingId);
+  return { error };
+}
+
+function normalizeIntlPhone(raw) {
+  const digits = String(raw || '').replace(/\D/g, '');
+  if (!digits) return '';
+  if (digits.startsWith('00')) return digits.slice(2);
+  return digits;
+}
+
+function isValidIntlPhone(raw) {
+  const normalized = normalizeIntlPhone(raw);
+  if (!normalized) return true;
+  return normalized.length >= 10 && normalized.length <= 15;
+}
+
+async function checkProfileFieldAvailability(userId, field, rawValue) {
+  if (!window.supabase?.from || !userId) return { available: true };
+
+  let value = String(rawValue || '').trim();
+  if (!value) return { available: true };
+
+  if (field === 'username') {
+    value = value.toLowerCase().replace(/\s+/g, '_').slice(0, 30);
+  } else if (field === 'phone' || field === 'whatsapp') {
+    value = normalizeIntlPhone(value);
+    if (!isValidIntlPhone(value)) {
+      return { available: false, message: 'Formato inválido. Usa 10-15 dígitos.' };
+    }
+  }
+
+  const { data, error } = await window.supabase
+    .from('profiles')
+    .select('id')
+    .eq(field, value)
+    .neq('id', userId)
+    .limit(1);
+
+  if (error) return { available: true };
+  if ((data || []).length === 0) return { available: true };
+
+  if (field === 'username') return { available: false, message: 'Ese username ya está en uso.' };
+  if (field === 'phone') return { available: false, message: 'Ese teléfono ya está en uso.' };
+  if (field === 'whatsapp') return { available: false, message: 'Ese WhatsApp ya está en uso.' };
+  return { available: false, message: 'Valor no disponible.' };
+}
+
+async function updateUserProfile(userId, patch = {}) {
+  if (!window.supabase?.from || !userId) return { error: 'Sin conexión' };
+
+  const username = String(patch.username || '').trim().toLowerCase().replace(/\s+/g, '_').slice(0, 30) || null;
+  const phone = normalizeIntlPhone(patch.phone || '');
+  const whatsapp = normalizeIntlPhone(patch.whatsapp || '');
+
+  if (!isValidIntlPhone(phone) || !isValidIntlPhone(whatsapp)) {
+    return { error: 'Formato inválido', message: 'Usa formato internacional de 10 a 15 dígitos (sin + ni espacios).' };
+  }
+
+  const checks = await Promise.all([
+    checkProfileFieldAvailability(userId, 'username', username),
+    checkProfileFieldAvailability(userId, 'phone', phone),
+    checkProfileFieldAvailability(userId, 'whatsapp', whatsapp),
+  ]);
+  const firstConflict = checks.find(c => !c.available);
+  if (firstConflict) return { error: 'conflict', message: firstConflict.message || 'Dato no disponible.' };
+
+  const payload = {
+    display_name: String(patch.name || '').trim() || null,
+    username,
+    bio: String(patch.bio || '').trim() || null,
+    location: String(patch.location || '').trim() || null,
+    phone: phone || null,
+    whatsapp: whatsapp || null,
+    updated_at: new Date(),
+  };
+
+  const { data, error } = await window.supabase
+    .from('profiles')
+    .update(payload)
+    .eq('id', userId)
+    .select('*')
+    .single();
+
+  if (error) {
+    if (String(error.message || '').toLowerCase().includes('duplicate')) {
+      return { error, message: 'Ese username o número ya está en uso.' };
+    }
+    return { error, message: 'No pudimos guardar el perfil.' };
+  }
+
+  return { data, error: null };
+}
+
+Object.assign(window, {
+  ACTIVITY_TYPES, readActivityLog, logActivity, timeAgo,
+  NOTIFICATION_TYPES, setNotificationsUser, getNotificationsUser, readNotifications, pushNotification, markAllRead, getUnreadCount,
+  proposeTrade, respondToOffer, cancelOffer, fetchTradeOffers,
+  fetchMarketplaceListings, createMarketplaceListing, closeMarketplaceListing,
+  normalizeIntlPhone, isValidIntlPhone, checkProfileFieldAvailability, updateUserProfile,
+});
+
+function useSupabaseSession() {
+  const [session, setSession] = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
+  React.useEffect(() => {
+    if (!window.supabase?.auth) {
+      setLoading(false);
+      return;
+    }
+    window.supabase.auth.getSession()
+      .then(({ data }) => {
+        setSession(data.session);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+    const { data: { subscription } } = window.supabase.auth.onAuthStateChange((_e, s) => setSession(s));
+    return () => subscription.unsubscribe();
+  }, []);
+  return { session, loading };
+}
 
 function App() {
+  const { session, loading } = useSupabaseSession();
+  const [viewport, setViewport] = React.useState({ w: window.innerWidth, h: window.innerHeight });
   const [screen, setScreen] = React.useState('login');
   const [nav, setNav] = React.useState('home');
   const [userData, setUserData] = React.useState(null);
+  const [recoveryMode, setRecoveryMode] = React.useState(false);
+  const [theme, setTheme] = React.useState('dark');
+  const [albumCountry, setAlbumCountry] = React.useState(null);
+  const [collection, setCollection] = React.useState(() => {
+    try { return JSON.parse(localStorage.getItem('stickio_collection')) || {}; }
+    catch { return {}; }
+  });
+  const [collectionReady, setCollectionReady] = React.useState(false);
+  React.useEffect(() => {
+    localStorage.setItem('stickio_collection', JSON.stringify(collection));
+  }, [collection]);
+  const stats = computeStats(collection);
+  const achievements = computeAchievements(collection, stats);
+  const [adminStats, setAdminStats] = React.useState(null);
+  const [activityLog, setActivityLog] = React.useState(() => readActivityLog());
+  const [notifications, setNotifications] = React.useState(() => readNotifications());
+  const prevStatsRef = React.useRef(null);
+  const prevCollectionRef = React.useRef(null);
+  const prevAchievementsRef = React.useRef(null);
+
+  React.useEffect(() => {
+    const onActivity = () => setActivityLog(readActivityLog());
+    window.addEventListener('stickio:activity-updated', onActivity);
+    return () => window.removeEventListener('stickio:activity-updated', onActivity);
+  }, []);
+
+  React.useEffect(() => {
+    const onNotif = () => setNotifications(readNotifications());
+    window.addEventListener('stickio:notification-added', onNotif);
+    window.addEventListener('stickio:notification-updated', onNotif);
+    return () => {
+      window.removeEventListener('stickio:notification-added', onNotif);
+      window.removeEventListener('stickio:notification-updated', onNotif);
+    };
+  }, []);
+
+  React.useEffect(() => {
+    if (!collectionReady) return;
+    const prev = prevStatsRef.current;
+    if (!prev) { prevStatsRef.current = stats; return; }
+    const pct     = stats.total ? stats.have / stats.total : 0;
+    const prevPct = stats.total ? prev.have  / stats.total : 0;
+    if (prev.have === 0 && stats.have >= 1)          pushNotification('milestone_first',    '¡Marcaste tu primera estampa!');
+    if (prevPct < 0.25  && pct >= 0.25)              pushNotification('milestone_pct25',    '¡Ya tienes el 25% del álbum!');
+    if (prevPct < 0.5   && pct >= 0.5)               pushNotification('milestone_pct50',    '¡Vas a la mitad del álbum!');
+    if (prevPct < 0.75  && pct >= 0.75)              pushNotification('milestone_pct75',    '¡Casi lo tienes! 75% completado');
+    if (prevPct < 1     && pct >= 1)                 pushNotification('milestone_complete', '¡Álbum completo! Eres el mejor');
+    if (prev.duplicates === 0 && stats.duplicates >= 1) pushNotification('duplicate_first', '¡Tienes tu primera repetida — úsala para intercambiar!');
+    prevStatsRef.current = stats;
+  }, [stats, collectionReady]);
+
+  React.useEffect(() => {
+    if (!collectionReady) return;
+    const prevCol = prevCollectionRef.current;
+    if (!prevCol) { prevCollectionRef.current = collection; return; }
+    COUNTRIES.forEach(c => {
+      const total = c.total || 20;
+      const keys = Array.from({ length: total }, (_, i) => `${c.code}${String(i + 1).padStart(2, '0')}`);
+      const wasComplete = keys.every(k => (prevCol[k] || 0) > 0);
+      const isComplete  = keys.every(k => (collection[k] || 0) > 0);
+      if (!wasComplete && isComplete) pushNotification('country_complete', `¡Completaste ${c.name || c.code}!`);
+    });
+    prevCollectionRef.current = collection;
+  }, [collection, collectionReady]);
+
+  React.useEffect(() => {
+    if (!collectionReady) return;
+    const prevAch = prevAchievementsRef.current;
+    if (!prevAch) { prevAchievementsRef.current = achievements; return; }
+    achievements.forEach(a => {
+      const was = prevAch.find(p => p.id === a.id);
+      if (a.unlocked && was && !was.unlocked) pushNotification('achievement', `Logro desbloqueado: ${a.label} ${a.desc}`);
+    });
+    prevAchievementsRef.current = achievements;
+  }, [achievements, collectionReady]);
+
+  React.useEffect(() => {
+    const checkRecovery = () => {
+      const hash = window.location.hash || '';
+      setRecoveryMode(hash.includes('type=recovery'));
+    };
+    checkRecovery();
+    window.addEventListener('hashchange', checkRecovery);
+    return () => window.removeEventListener('hashchange', checkRecovery);
+  }, []);
+
+  React.useEffect(() => {
+    if (loading) return;
+    if (recoveryMode) {
+      setScreen('reset');
+      return;
+    }
+    if (!session) {
+      setScreen('login');
+      setUserData(null);
+      return;
+    }
+    if (screen !== 'app') setScreen('app');
+    if (!userData) {
+      const user = session.user || {};
+      setUserData({ id: user.id, email: user.email });
+    }
+  }, [loading, session, recoveryMode]);
+
+  React.useEffect(() => {
+    const onResize = () => setViewport({ w: window.innerWidth, h: window.innerHeight });
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  React.useEffect(() => {
+    const onNavigate = (ev) => {
+      const detail = ev?.detail || {};
+      if (detail.nav === 'album') {
+        setAlbumCountry(detail.countryCode || null);
+      } else {
+        setAlbumCountry(null);
+      }
+      if (detail.nav) setNav(detail.nav);
+    };
+    window.addEventListener('stickio:navigate', onNavigate);
+    return () => window.removeEventListener('stickio:navigate', onNavigate);
+  }, []);
+
+  const isMobile = viewport.w < 820;
+
+  const userId = session?.user?.id || userData?.id;
+
+  React.useEffect(() => {
+    if (window.setNotificationsUser) {
+      window.setNotificationsUser(userId || null);
+    }
+    setNotifications(userId ? readNotifications(userId) : []);
+  }, [userId]);
+
+  React.useEffect(() => {
+    if (!userId || !window.supabase?.from) return;
+    setCollectionReady(false);
+    window.supabase.from('collections')
+      .select('sticker_id, quantity')
+      .eq('user_id', userId)
+      .then(({ data, error }) => {
+        if (error || !data) {
+          setCollectionReady(true);
+          return;
+        }
+        const map = {};
+        data.forEach(r => { map[r.sticker_id] = r.quantity; });
+        setCollection(map);
+        setCollectionReady(true);
+      });
+  }, [userId]);
+
+  React.useEffect(() => {
+    if (!userId || !window.supabase?.from) return;
+    const authUser = session?.user || {};
+    const meta = authUser.user_metadata || {};
+    const emailPrefix = authUser.email ? authUser.email.split('@')[0] : null;
+    const fallbackUsername = meta.username || emailPrefix || null;
+    const fallbackName = meta.display_name || meta.username || emailPrefix || null;
+    const fallbackCountry = COUNTRIES.find(c => c.code === meta.country_code) || null;
+    window.supabase.from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (error || !data) {
+          setUserData(prev => ({
+            ...prev,
+            id: userId,
+            email: authUser.email || prev?.email,
+            username: prev?.username || fallbackUsername,
+            name: prev?.name || fallbackName,
+            country: prev?.country || fallbackCountry,
+          }));
+          return;
+        }
+        setUserData(prev => ({
+          ...prev,
+          id: data.id,
+          email: data.email || authUser.email || prev?.email,
+          username: data.username || fallbackUsername,
+          name: data.display_name || data.username || fallbackName,
+          country: COUNTRIES.find(c => c.code === data.country_code) || fallbackCountry,
+          created_at: data.created_at || prev?.created_at || null,
+          bio: data.bio || prev?.bio || '',
+          location: data.location || prev?.location || '',
+          phone: data.phone || prev?.phone || '',
+          whatsapp: data.whatsapp || prev?.whatsapp || '',
+          is_admin: !!data.is_admin,
+        }));
+      });
+  }, [userId, session?.user]);
+
+  const handleUpdateUser = async (patch) => {
+    const nextLocal = prev => ({ ...prev, ...patch });
+    if (!userId || !window.updateUserProfile) {
+      setUserData(nextLocal);
+      return { data: patch, error: null };
+    }
+    const { data, error, message } = await window.updateUserProfile(userId, patch);
+    if (error || !data) return { error, message: message || 'No se pudo actualizar el perfil.' };
+
+    setUserData(prev => ({
+      ...prev,
+      ...patch,
+      id: data.id || prev?.id,
+      username: data.username || patch.username || prev?.username,
+      name: data.display_name || patch.name || prev?.name,
+      bio: data.bio || '',
+      location: data.location || '',
+      phone: data.phone || '',
+      whatsapp: data.whatsapp || '',
+    }));
+    return { data, error: null };
+  };
+
+  const [tradeOffers, setTradeOffers] = React.useState([]);
+
+  React.useEffect(() => {
+    if (!userId) { setTradeOffers([]); return; }
+    fetchTradeOffers(userId).then(setTradeOffers);
+  }, [userId]);
+
+  React.useEffect(() => {
+    if (!userId || !window.supabase?.channel) return;
+    const ch = window.supabase
+      .channel('trade_offers_realtime')
+      .on('postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'trade_offers', filter: `to_user=eq.${userId}` },
+        (payload) => {
+          setTradeOffers(prev => [payload.new, ...prev]);
+          pushNotification('achievement', '¡Tienes una nueva propuesta de intercambio!');
+        }
+      )
+      .on('postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'trade_offers' },
+        (payload) => {
+          setTradeOffers(prev => prev.map(o => o.id === payload.new.id ? { ...o, ...payload.new } : o));
+        }
+      )
+      .subscribe();
+    return () => window.supabase.removeChannel(ch);
+  }, [userId]);
+
+  const [marketplaceListings, setMarketplaceListings] = React.useState([]);
+
+  const shouldKeepMarketplaceListing = React.useCallback((listing) => {
+    if (!listing) return false;
+    if (listing.status === 'active') return true;
+    return !!userId && listing.user_id === userId;
+  }, [userId]);
+
+  const fetchMarketplaceListingById = React.useCallback(async (id) => {
+    if (!id || !window.supabase?.from) return null;
+    const { data } = await window.supabase
+      .from('marketplace_listings')
+      .select('*, profile:user_id(username, display_name, country_code, phone, whatsapp)')
+      .eq('id', id)
+      .maybeSingle();
+    return data || null;
+  }, []);
+
+  React.useEffect(() => {
+    fetchMarketplaceListings(userId).then(setMarketplaceListings);
+  }, [userId]);
+
+  React.useEffect(() => {
+    if (!window.supabase?.channel) return;
+    const ch = window.supabase
+      .channel('marketplace_realtime')
+      .on('postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'marketplace_listings' },
+        async (payload) => {
+          const enriched = await fetchMarketplaceListingById(payload.new?.id);
+          const nextItem = enriched || payload.new;
+          if (!shouldKeepMarketplaceListing(nextItem)) return;
+          setMarketplaceListings(prev => {
+            const without = (prev || []).filter(l => l.id !== nextItem.id);
+            return [nextItem, ...without];
+          });
+        }
+      )
+      .on('postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'marketplace_listings' },
+        async (payload) => {
+          const enriched = await fetchMarketplaceListingById(payload.new?.id);
+          const nextItem = enriched || payload.new;
+          setMarketplaceListings(prev => {
+            const list = prev || [];
+            const exists = list.some(l => l.id === nextItem.id);
+            if (!shouldKeepMarketplaceListing(nextItem)) {
+              return list.filter(l => l.id !== nextItem.id);
+            }
+            if (!exists) return [nextItem, ...list];
+            return list.map(l => l.id === nextItem.id ? { ...l, ...nextItem } : l);
+          });
+        }
+      )
+      .subscribe();
+    return () => window.supabase.removeChannel(ch);
+  }, [fetchMarketplaceListingById, shouldKeepMarketplaceListing]);
+
+  const fetchAdminStats = async () => {
+    if (!window.supabase?.rpc) return null;
+    const { data, error } = await window.supabase.rpc('get_admin_stats');
+    if (error) return null;
+    return data;
+  };
+
+  const syncSticker = async (stickerId, quantity) => {
+    if (quantity === 1) logActivity('add', stickerId);
+    else if (quantity >= 2) logActivity('dup', stickerId);
+    else if (quantity === 0) logActivity('remove', stickerId);
+    setActivityLog(readActivityLog());
+    if (!userId || !window.supabase?.from) return;
+    if (quantity === 0) {
+      await window.supabase.from('collections').delete()
+        .eq('user_id', userId).eq('sticker_id', stickerId);
+    } else {
+      await window.supabase.from('collections')
+        .upsert({ user_id: userId, sticker_id: stickerId, quantity, updated_at: new Date() });
+    }
+  };
 
   const {
-    LoginDesktop, RegisterDesktop, DashboardDesktop, AlbumDesktop,
-    TradeDesktop, ProfileDesktop,
+    LoginDesktop, RegisterDesktop, ResetPasswordRequestDesktop, ResetPasswordDesktop,
+    DashboardDesktop, AlbumDesktop, TradeDesktop, ProfileDesktop, AdminDesktop,
+    LoginScreen, RegisterScreen, ResetPasswordRequestScreen, ResetPasswordScreen, DashboardScreen, AlbumScreen, TradeScreen, ProfileScreen,
     DESKTOP_W, DESKTOP_H,
+    MOBILE_W, MOBILE_H,
   } = window;
 
   const handleLogin = () => { setScreen('app'); setNav('home'); };
   const handleRegister = (data) => { setUserData(data); setScreen('app'); setNav('home'); };
-  const handleNav = (id) => setNav(id);
+  const handleNav = (id) => {
+    setAlbumCountry(null);
+    setNav(id);
+  };
+  const handleNavToCountry = (countryCode) => {
+    setAlbumCountry(countryCode || null);
+    setNav('album');
+  };
+  const handleToggleTheme = () => {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    window.applyTheme(next);
+    window.__theme = next;
+    document.body.style.background = window.SK.bg;
+    setTheme(next);
+  };
 
   const ScaledAuth = ({ children }) => (
     <div style={{ width: '100vw', height: '100vh', background: window.SK.bg, overflow: 'hidden', position: 'relative' }}>
@@ -86,20 +779,57 @@ function App() {
     </div>
   );
 
-  if (screen === 'login')    return <ScaledAuth><LoginDesktop onLogin={handleLogin} onRegister={() => setScreen('register')}/></ScaledAuth>;
-  if (screen === 'register') return <ScaledAuth><RegisterDesktop onRegister={handleRegister} onLogin={() => setScreen('login')}/></ScaledAuth>;
+  if (screen === 'login') {
+    return isMobile
+      ? <ScaledMobile><LoginScreen onLogin={handleLogin} onRegister={() => setScreen('register')} onForgot={() => setScreen('reset-request')}/></ScaledMobile>
+      : <ScaledAuth><LoginDesktop onLogin={handleLogin} onRegister={() => setScreen('register')} onForgot={() => setScreen('reset-request')}/></ScaledAuth>;
+  }
+  if (screen === 'register') {
+    return isMobile
+      ? <ScaledMobile><RegisterScreen onRegister={handleRegister} onLogin={() => setScreen('login')}/></ScaledMobile>
+      : <ScaledAuth><RegisterDesktop onRegister={handleRegister} onLogin={() => setScreen('login')}/></ScaledAuth>;
+  }
+  if (screen === 'reset-request') {
+    return isMobile
+      ? <ScaledMobile><ResetPasswordRequestScreen onBack={() => setScreen('login')}/></ScaledMobile>
+      : <ScaledAuth><ResetPasswordRequestDesktop onBack={() => setScreen('login')}/></ScaledAuth>;
+  }
+  if (screen === 'reset') {
+    const done = async () => {
+      if (window.supabase?.auth) await window.supabase.auth.signOut();
+      window.history.replaceState(null, '', window.location.pathname);
+      setScreen('login');
+    };
+    return isMobile
+      ? <ScaledMobile><ResetPasswordScreen onDone={done}/></ScaledMobile>
+      : <ScaledAuth><ResetPasswordDesktop onDone={done}/></ScaledAuth>;
+  }
 
   const renderScreen = () => {
+    if (isMobile) {
+      switch (nav) {
+        case 'home':        return <DashboardScreen onNav={handleNav} onNavToCountry={handleNavToCountry} stats={stats} collection={collection} activityLog={activityLog} notifications={notifications}/>;
+        case 'album':       return <AlbumScreen onNav={handleNav} initialCountry={albumCountry} collection={collection} setCollection={setCollection} onStickerChange={syncSticker} notifications={notifications}/>;
+        case 'trade':       return <TradeScreen onNav={handleNav} collection={collection} userData={userData} notifications={notifications} tradeOffers={tradeOffers} onTradeOffersChange={setTradeOffers} userId={userId}/>;
+        case 'marketplace': return <MarketplaceScreen onNav={handleNav} userData={userData} collection={collection} notifications={notifications} marketplaceListings={marketplaceListings} onMarketplaceListingsChange={setMarketplaceListings} userId={userId}/>;
+        case 'profile':     return <ProfileScreen onNav={handleNav} stats={stats} achievements={achievements} userData={userData} onUpdateUser={handleUpdateUser} notifications={notifications} tradeOffers={tradeOffers} userId={userId}/>;
+        default:        return <DashboardScreen onNav={handleNav} onNavToCountry={handleNavToCountry} stats={stats} collection={collection} activityLog={activityLog} notifications={notifications}/>;
+      }
+    }
     switch (nav) {
-      case 'home':    return <DashboardDesktop onNav={handleNav} stats={stats}/>;
-      case 'album':   return <AlbumDesktop onNav={handleNav}/>;
-      case 'trade':   return <TradeDesktop onNav={handleNav}/>;
-      case 'profile': return <ProfileDesktop onNav={handleNav} stats={stats} userData={userData}/>;
-      default:        return <DashboardDesktop onNav={handleNav} stats={stats}/>;
+      case 'home':        return <DashboardDesktop onNav={handleNav} onNavToCountry={handleNavToCountry} stats={stats} collection={collection} activityLog={activityLog} theme={theme} onToggleTheme={handleToggleTheme} userData={userData} notifications={notifications}/>;
+      case 'album':       return <AlbumDesktop onNav={handleNav} initialCountry={albumCountry} theme={theme} onToggleTheme={handleToggleTheme} collection={collection} setCollection={setCollection} onStickerChange={syncSticker} userData={userData} stats={stats} notifications={notifications}/>;
+      case 'trade':       return <TradeDesktop onNav={handleNav} theme={theme} onToggleTheme={handleToggleTheme} collection={collection} userData={userData} stats={stats} notifications={notifications} tradeOffers={tradeOffers} onTradeOffersChange={setTradeOffers} userId={userId}/>;
+      case 'marketplace': return <MarketplaceDesktop onNav={handleNav} userData={userData} theme={theme} onToggleTheme={handleToggleTheme} collection={collection} stats={stats} notifications={notifications} marketplaceListings={marketplaceListings} onMarketplaceListingsChange={setMarketplaceListings} userId={userId}/>;
+      case 'profile':     return <ProfileDesktop onNav={handleNav} stats={stats} achievements={achievements} userData={userData} theme={theme} onToggleTheme={handleToggleTheme} onUpdateUser={handleUpdateUser} collection={collection} activityLog={activityLog} notifications={notifications} tradeOffers={tradeOffers} userId={userId}/>;
+      case 'admin':       return <AdminDesktop onNav={handleNav} userData={userData} theme={theme} onToggleTheme={handleToggleTheme} fetchStats={fetchAdminStats} stats={stats} notifications={notifications}/>;
+      default:        return <DashboardDesktop onNav={handleNav} onNavToCountry={handleNavToCountry} stats={stats} collection={collection} activityLog={activityLog} theme={theme} onToggleTheme={handleToggleTheme} userData={userData} notifications={notifications}/>;
     }
   };
 
-  return (
+  return isMobile ? (
+    <ScaledMobile>{renderScreen()}</ScaledMobile>
+  ) : (
     <div style={{
       width: '100vw', height: '100vh',
       overflow: 'hidden',
@@ -108,6 +838,37 @@ function App() {
       <ScaledDesktop width={DESKTOP_W} height={DESKTOP_H}>
         {renderScreen()}
       </ScaledDesktop>
+    </div>
+  );
+}
+
+function ScaledMobile({ children }) {
+  const [scale, setScale] = React.useState(1);
+  React.useEffect(() => {
+    const update = () => {
+      const scaleX = window.innerWidth / MOBILE_W;
+      const scaleY = window.innerHeight / MOBILE_H;
+      setScale(Math.min(scaleX, scaleY));
+    };
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+  return (
+    <div style={{
+      width: '100vw', height: '100vh',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      overflow: 'hidden',
+      background: window.SK.bg,
+    }}>
+      <div style={{
+        transform: `scale(${scale})`,
+        transformOrigin: 'center center',
+        width: MOBILE_W, height: MOBILE_H,
+        flexShrink: 0,
+      }}>
+        {children}
+      </div>
     </div>
   );
 }
