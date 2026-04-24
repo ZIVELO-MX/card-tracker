@@ -91,7 +91,7 @@ function StickerArt({ seed = 0, countryColor = '#1E3A5F', state = 'have' }) {
 }
 
 // Sticker card — the central visual element
-function StickerCard({ num, country, player, state, count = 1, size = 'md', type = 'jugador', subtype, onClick }) {
+function StickerCard({ num, country, player, state, count = 1, size = 'md', type = 'jugador', subtype, position, onClick }) {
   const [hov, setHov] = React.useState(false);
   const sizes = {
     sm: { p: 6,  fNum: 15, fName: 8,  fBanner: 7  },
@@ -208,13 +208,13 @@ function StickerCard({ num, country, player, state, count = 1, size = 'md', type
          }}>
            {String(num).padStart(3, '0')}
          </div>
-         {typeLabel[type] && state !== 'missing' && (
+         {(typeLabel[type] || position) && (
            <div style={{
              fontFamily: SK.fMono, fontSize: 7, fontWeight: 700,
-             color: accentColor, letterSpacing: 0.5,
+             color: state === 'missing' ? SK.textDim : accentColor, letterSpacing: 0.5,
              background: `${accentColor}18`, padding: '2px 4px', borderRadius: 3,
              marginTop: 2,
-           }}>{typeLabel[type]}</div>
+           }}>{typeLabel[type] || position}</div>
          )}
        </div>
 

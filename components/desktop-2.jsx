@@ -1071,7 +1071,12 @@ function stickerInfoFromId(id) {
     const num = parseInt(id.slice(country.code.length), 10);
     const type = num === 1 ? 'escudo' : (num === 13 ? 'equipo' : 'jugador');
     const label = num === 1 ? `Escudo · ${country.name}` : num === 13 ? 'Foto Equipo' : `Jugador #${String(num).padStart(2,'0')}`;
-    return { num, label, country, type, subtype: null };
+    let position = null;
+    if (num === 2) position = 'POR';
+    else if (num >= 3 && num <= 7) position = 'DEF';
+    else if ((num >= 8 && num <= 12) || num === 14) position = 'MED';
+    else if (num >= 15 && num <= 20) position = 'DEL';
+    return { num, label, country, type, subtype: null, position };
   }
   if (id.startsWith('FWC')) {
     const num = parseInt(id.slice(3), 10);

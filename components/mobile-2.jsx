@@ -17,22 +17,24 @@ function stickersFor(country, startNum) {
 
     let type = 'jugador';
     let player = '';
+    let position = null;
     if (num === 1) {
-      // Sticker #1 = team crest/shield
       type = 'escudo';
       player = `Escudo · ${country.name}`;
     } else if (num === 13) {
-      // Sticker #13 = official team photo
       type = 'equipo';
       player = 'Foto Equipo';
     } else {
-      // Jugadores: positions 2-12 (idx 0-10) and 14-20 (idx 11-17)
       const idx = num < 13 ? num - 2 : num - 3;
       player = PLAYERS[idx % PLAYERS.length] + ' ' + String.fromCharCode(65 + (idx % 6));
+      if (num === 2) position = 'POR';
+      else if (num >= 3 && num <= 7) position = 'DEF';
+      else if ((num >= 8 && num <= 12) || num === 14) position = 'MED';
+      else if (num >= 15 && num <= 20) position = 'DEL';
     }
 
     const id = `${country.code}${String(num).padStart(2, '0')}`;
-    arr.push({ id, num, player, country, state, count, type });
+    arr.push({ id, num, player, country, state, count, type, position });
   }
   return arr;
 }
