@@ -305,6 +305,10 @@ function LoginDesktop({ onLogin, onRegister, onForgot }) {
           </div>
         </div>
         <div style={{ marginTop: 28, textAlign: 'center' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 20, marginBottom: 8 }}>
+            <a href="privacy.html" target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: SK.textDim, textDecoration: 'none', letterSpacing: 0.4 }}>Privacidad</a>
+            <a href="terms.html" target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: SK.textDim, textDecoration: 'none', letterSpacing: 0.4 }}>Términos</a>
+          </div>
           <div style={{ fontSize: 11, color: SK.textDim, letterSpacing: 0.6, textTransform: 'uppercase' }}>By ZIVELO</div>
           <div style={{ fontSize: 10, color: SK.textDim, marginTop: 4 }}>© 2026 ZIVELO. All rights reserved.</div>
         </div>
@@ -832,6 +836,10 @@ function RegisterDesktop({ onRegister, onLogin }) {
           </div>
         </div>
         <div style={{ marginTop: 24, textAlign: 'center' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 20, marginBottom: 8 }}>
+            <a href="privacy.html" target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: SK.textDim, textDecoration: 'none', letterSpacing: 0.4 }}>Privacidad</a>
+            <a href="terms.html" target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: SK.textDim, textDecoration: 'none', letterSpacing: 0.4 }}>Términos</a>
+          </div>
           <div style={{ fontSize: 11, color: SK.textDim, letterSpacing: 0.6, textTransform: 'uppercase' }}>By ZIVELO</div>
           <div style={{ fontSize: 10, color: SK.textDim, marginTop: 4 }}>© 2026 ZIVELO. All rights reserved.</div>
         </div>

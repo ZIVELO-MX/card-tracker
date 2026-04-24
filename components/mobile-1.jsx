@@ -330,6 +330,10 @@ function LoginScreen({ onLogin, onRegister, onForgot }) {
           ¿No tienes cuenta? <span onClick={onRegister} style={{ color: SK.gold, fontWeight: 600, cursor: 'pointer' }}>Regístrate</span>
         </div>
         <div style={{ textAlign: 'center', marginTop: 12 }}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginBottom: 8 }}>
+            <a href="privacy.html" target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: SK.textDim, textDecoration: 'none', letterSpacing: 0.4 }}>Privacidad</a>
+            <a href="terms.html" target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: SK.textDim, textDecoration: 'none', letterSpacing: 0.4 }}>Términos</a>
+          </div>
           <div style={{ fontSize: 10, color: SK.textDim, letterSpacing: 0.6, textTransform: 'uppercase' }}>By ZIVELO</div>
           <div style={{ fontSize: 9, color: SK.textDim, marginTop: 3 }}>© 2026 ZIVELO. All rights reserved.</div>
         </div>
