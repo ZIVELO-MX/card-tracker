@@ -1279,7 +1279,7 @@ function ScanTab({ collection = {}, userId = null, onTradeOffersChange = () => {
 // ─────────────────────────────────────────────────────────────
 // SCREEN 5 — Profile
 // ─────────────────────────────────────────────────────────────
-function ProfileScreen({ onNav, stats, achievements = [], userData, onUpdateUser, tradeOffers = [], userId = null }) {
+function ProfileScreen({ onNav, stats, achievements = [], userData, onUpdateUser, tradeOffers = [], userId = null, collection = {}, activityLog = [] }) {
   const { have, total, duplicates } = stats;
   const pct = ((have / total) * 100).toFixed(1);
   const [editOpen, setEditOpen] = React.useState(false);
@@ -1292,6 +1292,27 @@ function ProfileScreen({ onNav, stats, achievements = [], userData, onUpdateUser
     () => tradeOffers.filter(o => o.status === 'accepted' && (o.from_user === userId || o.to_user === userId)).length,
     [tradeOffers, userId]
   );
+  const recentStickerItems = React.useMemo(() => {
+    const ids = [];
+    const seen = new Set();
+    for (const ev of activityLog) {
+      if (ev.type !== 'add' && ev.type !== 'dup') continue;
+      if (!ev.id || seen.has(ev.id)) continue;
+      ids.push(ev.id);
+      seen.add(ev.id);
+      if (ids.length >= 3) break;
+    }
+    const fallbackIds = Object.entries(collection).filter(([, qty]) => qty >= 1).map(([id]) => id).reverse();
+    for (const id of fallbackIds) {
+      if (ids.length >= 3) break;
+      if (!ids.includes(id)) ids.push(id);
+    }
+    return ids.slice(0, 3).map(id => {
+      const qty = collection[id] || 1;
+      const info = window.stickerInfoFromId ? window.stickerInfoFromId(id) : { num: 0, label: id, country: null, type: 'jugador', subtype: null };
+      return { id, qty, info };
+    });
+  }, [activityLog, collection]);
   const memberSince = React.useMemo(() => {
     const ts = userData?.created_at;
     if (!ts) return 'Coleccionista en Stickio';
@@ -1377,28 +1398,53 @@ function ProfileScreen({ onNav, stats, achievements = [], userData, onUpdateUser
         {/* Achievements */}
         <div style={{ padding: '0 20px 20px' }}>
           <div style={{ fontSize: 10, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600 }}>logros</div>
-          <div style={{ fontFamily: SK.fHead, fontSize: 20, fontWeight: 700, color: SK.text, marginTop: 2, marginBottom: 12 }}>Insignias desbloqueadas</div>
+          <div style={{ fontFamily: SK.fHead, fontSize: 20, fontWeight: 700, color: SK.text, marginTop: 2, marginBottom: 12 }}>Insignias</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
             {(achievements.length ? achievements : [
               { id: 'first', label: 'Primera', desc: 'Estampa', unlocked: true, icon: 'star' },
               { id: 'pct25', label: '25%', desc: 'Del álbum', unlocked: false, icon: 'pct' },
-              { id: 'swap', label: '5', desc: 'Repetidas', unlocked: false, icon: 'swap' },
+              { id: 'pct50', label: '50%', desc: 'Del álbum', unlocked: false, icon: 'pct' },
               { id: 'complete', label: '100%', desc: 'Completo', unlocked: false, icon: 'trophy' },
+              { id: 'dup5', label: '5', desc: 'Repetidas', unlocked: false, icon: 'swap' },
+              { id: 'dup20', label: '20', desc: 'Repetidas', unlocked: false, icon: 'swap' },
+              { id: 'country1', label: '1', desc: 'País completo', unlocked: false, icon: 'star' },
+              { id: 'country5', label: '5', desc: 'Países completos', unlocked: false, icon: 'star' },
             ]).map(a => (
               <Badge key={a.id} label={a.label} desc={a.desc} unlocked={a.unlocked} locked={!a.unlocked} icon={a.icon}/>
             ))}
           </div>
         </div>
 
-          {/* Featured collection */}
+          {/* Recently marked stickers */}
           <div style={{ padding: '0 20px 20px' }}>
-            <div style={{ fontSize: 10, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600 }}>destacadas</div>
-            <div style={{ fontFamily: SK.fHead, fontSize: 20, fontWeight: 700, color: SK.text, marginTop: 2, marginBottom: 12 }}>Edición foil</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
-              {[{ num: 1, c: COUNTRIES[0] }, { num: 2, c: COUNTRIES[3] }, { num: 3, c: COUNTRIES[1] }].map(f => (
-                <FoilSticker key={f.num} num={f.num} country={f.c}/>
-              ))}
-            </div>
+            <div style={{ fontSize: 10, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600 }}>recientes</div>
+            <div style={{ fontFamily: SK.fHead, fontSize: 20, fontWeight: 700, color: SK.text, marginTop: 2, marginBottom: 12 }}>Últimas marcadas</div>
+            {recentStickerItems.length === 0 ? (
+              <div style={{ background: SK.surface, border: `1px solid ${SK.border}`, borderRadius: 12 }}>
+                <EmptyState icon="✨" title="Sin estampas aún" sub="Marcá estampas en el Álbum"/>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+                {recentStickerItems.map(item => (
+                  <div key={item.id} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <StickerCard
+                      num={item.info.num || 0}
+                      player={item.info.label || item.id}
+                      country={item.info.country || null}
+                      type={item.info.type || 'jugador'}
+                      subtype={item.info.subtype}
+                      state={item.qty >= 2 ? 'duplicate' : 'have'}
+                      count={item.qty}
+                      size="sm"
+                    />
+                    <div style={{
+                      fontFamily: SK.fMono, fontSize: 10, color: SK.textMute,
+                      textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                    }}>{item.id}</div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Edit + Logout buttons */}
