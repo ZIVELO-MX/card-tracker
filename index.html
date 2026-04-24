@@ -554,7 +554,10 @@ function App() {
   }, [userId]);
 
   React.useEffect(() => {
-    if (!userId || !window.supabase?.from) return;
+    if (!userId || !window.supabase?.from) {
+      setCollectionReady(true);
+      return;
+    }
     setCollectionReady(false);
     window.supabase.from('collections')
       .select('sticker_id, quantity')
@@ -564,9 +567,17 @@ function App() {
           setCollectionReady(true);
           return;
         }
-        const map = {};
-        data.forEach(r => { map[r.sticker_id] = r.quantity; });
-        setCollection(map);
+        const remote = {};
+        data.forEach(r => { remote[r.sticker_id] = r.quantity; });
+        let local = {};
+        try { local = JSON.parse(localStorage.getItem('stickio_collection') || '{}'); } catch {}
+        const merged = { ...local, ...remote };
+        setCollection(merged);
+        const toSync = Object.entries(local).filter(([id, qty]) => !remote[id] && qty > 0);
+        if (toSync.length > 0) {
+          const rows = toSync.map(([sticker_id, quantity]) => ({ user_id: userId, sticker_id, quantity, updated_at: new Date() }));
+          window.supabase.from('collections').upsert(rows);
+        }
         setCollectionReady(true);
       });
   }, [userId]);
