@@ -1103,18 +1103,6 @@ function DashboardScreen({ onNav, onNavToCountry, stats, collection = {}, activi
           </div>
         </div>
       </div>
-
-      {/* FAB */}
-      <button style={{
-        position: 'absolute', right: 20, bottom: 96,
-        width: 56, height: 56, borderRadius: 28,
-        background: SK.gold, border: 'none',
-        boxShadow: `0 8px 24px -4px ${SK.goldDeep}, 0 0 0 6px ${SK.gold}22`,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        cursor: 'pointer', zIndex: 10,
-      }}>
-        <Icon.Plus s={26} c={SK.bg}/>
-      </button>
     </PhoneShell>
   );
 }

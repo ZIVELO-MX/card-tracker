@@ -1,0 +1,25 @@
+{
+  "name": "Stickio",
+  "short_name": "Stickio",
+  "description": "Tu álbum, organizado.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0A1628",
+  "theme_color": "#0A1628",
+  "icons": [
+    {
+      "src": "img/stickio-app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "img/stickio-favicon.png",
+      "sizes": "192x192 512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

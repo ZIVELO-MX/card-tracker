@@ -2,19 +2,39 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Stickio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@500;600;700&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="icon" href="img/stickio-favicon.svg" type="image/svg+xml">
 <link rel="icon" href="img/stickio-favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="img/stickio-app-icon.svg">
+<link rel="apple-touch-icon" sizes="180x180" href="img/stickio-favicon.png">
+<link rel="mask-icon" href="img/stickio-favicon.svg" color="#E7B10A">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0A1628">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Stickio">
 <style>
   html, body {
     margin: 0; padding: 0;
     background: #0A1628;
     overflow: hidden;
-    width: 100vw; height: 100vh;
+    width: 100vw;
+    height: 100vh;
+    height: 100svh;
+    overscroll-behavior: none;
+    touch-action: manipulation;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #root {
+    width: 100%;
+    height: 100%;
   }
   * { box-sizing: border-box; }
   ::-webkit-scrollbar { width: 0; height: 0; }
@@ -34,6 +54,16 @@
 <body>
 <div id="root"></div>
 
+<script>
+  // Prevent pinch-zoom on iOS Safari (ignores user-scalable=no).
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach(ev =>
+    document.addEventListener(ev, e => e.preventDefault(), { passive: false })
+  );
+  // Prevent two-finger pan-zoom.
+  document.addEventListener('touchmove', e => {
+    if (e.touches && e.touches.length > 1) e.preventDefault();
+  }, { passive: false });
+</script>
 <script>
   window.SUPABASE_URL = 'https://inkessfnpadmvsgbmuzq.supabase.co';
   window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlua2Vzc2ZucGFkbXZzZ2JtdXpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MTQ1NzgsImV4cCI6MjA5MjM5MDU3OH0.WaziZXriPzKA2K7A-ltqc4jCXqsP8RUWn0VjyoRR6Hg';
@@ -854,20 +884,35 @@ function App() {
 }
 
 function ScaledMobile({ children }) {
-  const [scale, setScale] = React.useState(1);
+  const measure = () => {
+    const vw = window.innerWidth;
+    const vh = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+    return Math.min(vw / MOBILE_W, vh / MOBILE_H);
+  };
+  const [scale, setScale] = React.useState(measure);
   React.useEffect(() => {
-    const update = () => {
-      const scaleX = window.innerWidth / MOBILE_W;
-      const scaleY = window.innerHeight / MOBILE_H;
-      setScale(Math.min(scaleX, scaleY));
+    let lastW = window.innerWidth;
+    const update = () => setScale(measure());
+    const onResize = () => {
+      // Ignore address-bar hide/show (only height changes) to avoid layout jumps.
+      if (window.innerWidth !== lastW) {
+        lastW = window.innerWidth;
+        update();
+      }
     };
-    update();
-    window.addEventListener('resize', update);
-    return () => window.removeEventListener('resize', update);
+    const onOrientation = () => setTimeout(update, 150);
+    window.addEventListener('resize', onResize);
+    window.addEventListener('orientationchange', onOrientation);
+    return () => {
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('orientationchange', onOrientation);
+    };
   }, []);
   return (
     <div style={{
-      width: '100vw', height: '100vh',
+      width: '100vw',
+      height: '100svh',
+      minHeight: '-webkit-fill-available',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       overflow: 'hidden',
       background: window.SK.bg,
