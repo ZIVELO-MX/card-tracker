@@ -638,6 +638,13 @@ function MarketplaceScreen({ onNav, userData, collection = {}, marketplaceListin
               })}
             </div>
 
+            {filtered.length === 0 && (
+              <div style={{ background: SK.surface, border: `1px dashed ${SK.border}`, borderRadius: 12, padding: 32, textAlign: 'center' }}>
+                <Icon.Store s={32} c={SK.textDim}/>
+                <div style={{ fontFamily: SK.fHead, fontSize: 14, fontWeight: 700, color: SK.textMute, marginTop: 10, textTransform: 'uppercase', letterSpacing: 0.5 }}>Sin publicaciones</div>
+                <div style={{ fontSize: 12, color: SK.textDim, marginTop: 4 }}>Nadie publicó en este filtro aún.</div>
+              </div>
+            )}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12 }}>
               {filtered.map(l => (
                 <div key={l.id} style={{ background: SK.surface, border: `1px solid ${SK.border}`, borderRadius: 12, padding: 14 }}>
@@ -756,10 +763,23 @@ function MarketplaceScreen({ onNav, userData, collection = {}, marketplaceListin
         {tab === 'mine' && (
           <div style={{ padding: '0 20px 20px' }}>
             {mine.length === 0 ? (
-              <div style={{ background: SK.surface, border: `1px dashed ${SK.border}`, borderRadius: 12, padding: 24, textAlign: 'center', color: SK.textDim }}>
-                Sin publicaciones aún.
+              <div style={{ background: SK.surface, border: `1px dashed ${SK.border}`, borderRadius: 12, padding: 32, textAlign: 'center' }}>
+                <Icon.Store s={32} c={SK.textDim}/>
+                <div style={{ fontFamily: SK.fHead, fontSize: 14, fontWeight: 700, color: SK.textMute, marginTop: 10, textTransform: 'uppercase', letterSpacing: 0.5 }}>Sin publicaciones</div>
+                <div style={{ fontSize: 12, color: SK.textDim, marginTop: 4 }}>Usá "Nueva" para publicar.</div>
               </div>
             ) : (
+              <>
+                <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
+                  <div style={{ flex: 1, background: SK.surface, border: `1px solid ${SK.border}`, borderRadius: 10, padding: '12px 14px' }}>
+                    <div style={{ fontFamily: SK.fMono, fontSize: 20, fontWeight: 700, color: SK.green }}>{mine.filter(l => l.status === 'active').length}</div>
+                    <div style={{ fontSize: 10, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600, marginTop: 2 }}>Activas</div>
+                  </div>
+                  <div style={{ flex: 1, background: SK.surface, border: `1px solid ${SK.border}`, borderRadius: 10, padding: '12px 14px' }}>
+                    <div style={{ fontFamily: SK.fMono, fontSize: 20, fontWeight: 700, color: SK.textMute }}>{mine.filter(l => l.status === 'closed').length}</div>
+                    <div style={{ fontSize: 10, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600, marginTop: 2 }}>Cerradas</div>
+                  </div>
+                </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12 }}>
                 {mine.map(l => (
                   <div key={l.id} style={{ background: SK.surface, border: `1px solid ${SK.border}`, borderRadius: 12, padding: 14 }}>
@@ -780,6 +800,7 @@ function MarketplaceScreen({ onNav, userData, collection = {}, marketplaceListin
                   </div>
                 ))}
               </div>
+              </>
             )}
           </div>
         )}
