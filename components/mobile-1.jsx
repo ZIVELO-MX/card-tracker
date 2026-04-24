@@ -6,31 +6,6 @@ window.MOBILE_W = MOBILE_W;
 window.MOBILE_H = MOBILE_H;
 
 // ─────────────────────────────────────────────────────────────
-// Status bar (mobile chrome)
-// ─────────────────────────────────────────────────────────────
-function MobileStatus() {
-  return (
-    <div style={{
-      height: 44, padding: '0 24px',
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      fontFamily: SK.fBody, fontSize: 15, fontWeight: 600, color: SK.text,
-      flexShrink: 0,
-    }}>
-      <span style={{ fontFamily: SK.fMono }}>9:41</span>
-      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-        <svg width="18" height="12" viewBox="0 0 18 12"><path fill={SK.text} d="M1 8h2v3H1zM5 6h2v5H5zM9 4h2v7H9zM13 2h2v9h-2z"/></svg>
-        <svg width="16" height="11" viewBox="0 0 16 11"><path fill={SK.text} d="M8 2.7a6.5 6.5 0 0 1 4.6 1.9l1.2-1.3a8.1 8.1 0 0 0-11.6 0l1.2 1.3A6.5 6.5 0 0 1 8 2.7zm0 3.2a3.3 3.3 0 0 1 2.3 1l1.2-1.3a5 5 0 0 0-7 0l1.2 1.3A3.3 3.3 0 0 1 8 5.9zm0 3.2a1.4 1.4 0 0 0-1 .4l1 1 1-1a1.4 1.4 0 0 0-1-.4z"/></svg>
-        <svg width="26" height="12" viewBox="0 0 26 12">
-          <rect x="0.5" y="0.5" width="22" height="11" rx="3" fill="none" stroke={SK.text} opacity="0.4"/>
-          <rect x="2" y="2" width="18" height="8" rx="1.5" fill={SK.text}/>
-          <rect x="23" y="4" width="2" height="4" rx="0.5" fill={SK.text} opacity="0.4"/>
-        </svg>
-      </div>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────
 // Bottom nav
 // ─────────────────────────────────────────────────────────────
 function BottomNav({ active, onNav }) {
@@ -74,7 +49,7 @@ function BottomNav({ active, onNav }) {
 // ─────────────────────────────────────────────────────────────
 // Phone shell — puts content inside a device frame
 // ─────────────────────────────────────────────────────────────
-function PhoneShell({ children, showNav = true, active, onNav, noStatus = false }) {
+function PhoneShell({ children, showNav = true, active, onNav }) {
   return (
     <div style={{
       width: MOBILE_W, height: MOBILE_H,
@@ -85,7 +60,6 @@ function PhoneShell({ children, showNav = true, active, onNav, noStatus = false 
       overflow: 'hidden',
       position: 'relative',
     }}>
-      {!noStatus && <MobileStatus/>}
       <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         {children}
       </div>
@@ -237,7 +211,6 @@ function LoginScreen({ onLogin, onRegister, onForgot }) {
             }}>Email o usuario</label>
             <input
               value={email} onChange={e => setEmail(e.target.value)}
-              placeholder="Email o usuario"
               onFocus={() => setFocus('email')} onBlur={() => setFocus(null)}
               disabled={isSubmitting}
               style={{
