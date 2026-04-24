@@ -319,85 +319,199 @@ function LoginScreen({ onLogin, onRegister, onForgot }) {
 // SCREEN 1B — Register
 // ─────────────────────────────────────────────────────────────
 function RegisterScreen({ onRegister, onLogin }) {
-  const [username, setUsername] = React.useState('');
-  const [email, setEmail] = React.useState('');
-  const [pwd, setPwd] = React.useState('');
-  const [confirmPwd, setConfirmPwd] = React.useState('');
-  const [country, setCountry] = React.useState('');
-  const [focus, setFocus] = React.useState(null);
-  const [errMsg, setErrMsg] = React.useState(null);
+  const [name, setName]               = React.useState('');
+  const [username, setUsername]       = React.useState('');
+  const [email, setEmail]             = React.useState('');
+  const [pwd, setPwd]                 = React.useState('');
+  const [confirmPwd, setConfirmPwd]   = React.useState('');
+  const [country, setCountry]         = React.useState('');
+  const [whatsapp, setWhatsapp]       = React.useState('');
+  const [focus, setFocus]             = React.useState(null);
+  const [showPwd, setShowPwd]         = React.useState(false);
+  const [showConfirm, setShowConfirm] = React.useState(false);
+  const [errMsg, setErrMsg]           = React.useState(null);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [emailSent, setEmailSent]     = React.useState(false);
   const [acceptTerms, setAcceptTerms] = React.useState(false);
   const [acceptPrivacy, setAcceptPrivacy] = React.useState(false);
 
   const selectedCountry = COUNTRIES.find(c => c.code === country) || null;
   const pwdMatch = pwd && confirmPwd && pwd === confirmPwd;
-  const canSubmit = username && email && pwd && confirmPwd && pwdMatch && country && acceptTerms && acceptPrivacy;
+  const pwdMismatch = pwd && confirmPwd && pwd !== confirmPwd;
+  const canSubmit = name && username && email && pwd && confirmPwd && pwdMatch && country && acceptTerms && acceptPrivacy;
+
+  const EyeIcon = ({ show }) => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      {show
+        ? <><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></>
+        : <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></>
+      }
+    </svg>
+  );
 
   const handleSubmit = async () => {
-    if (!canSubmit) return;
+    if (!canSubmit || isSubmitting) return;
     setErrMsg(null);
+    setIsSubmitting(true);
+    const cleanName = name.trim();
+    const cleanUsername = username.trim().toLowerCase();
+    const cleanWhatsapp = whatsapp.trim();
     if (!window.supabase?.auth) {
       setErrMsg('Supabase no está configurado.');
+      setIsSubmitting(false);
       return;
     }
-    const { data: existing } = await window.supabase
-      .from('profiles')
-      .select('id')
-      .eq('username', username)
-      .limit(1);
-    if (existing && existing.length) {
-      setErrMsg('Ese usuario ya existe.');
-      return;
-    }
-    const cleanUsername = username.trim();
-    const { data, error } = await window.supabase.auth.signUp({
-      email,
-      password: pwd,
-      options: {
-        data: {
-          username: cleanUsername,
-          full_name: cleanUsername,
-          display_name: cleanUsername,
-          country_code: selectedCountry?.code || null,
-        },
-      },
-    });
-    if (error) {
-      const msg = error.message || '';
-      if (msg.toLowerCase().includes('already registered')) {
-        setErrMsg('Ese email ya está registrado. Inicia sesión o usa otro.');
-      } else if (msg.toLowerCase().includes('invalid') || msg.toLowerCase().includes('email')) {
-        setErrMsg('Revisa el email e intenta de nuevo.');
-      } else {
-        setErrMsg('No pudimos crear la cuenta. Intenta nuevamente.');
+    try {
+      const { data: existing } = await window.supabase
+        .from('profiles')
+        .select('id')
+        .ilike('username', cleanUsername)
+        .limit(1);
+      if (existing && existing.length) {
+        setErrMsg('Ese usuario ya existe. Elegí otro.');
+        return;
       }
-      return;
-    }
-    if (data?.user) {
-      const { error: profileErr } = await window.supabase.from('profiles').upsert({
-        id: data.user.id,
-        username: cleanUsername,
-        display_name: cleanUsername,
+      if (cleanWhatsapp) {
+        const { data: existingPhone } = await window.supabase
+          .from('profiles')
+          .select('id')
+          .eq('phone', cleanWhatsapp)
+          .limit(1);
+        if (existingPhone && existingPhone.length) {
+          setErrMsg('Ese número de WhatsApp ya está registrado.');
+          return;
+        }
+      }
+      const { data, error } = await window.supabase.auth.signUp({
         email,
-        country_code: selectedCountry?.code || null,
-        terms_accepted_at: new Date().toISOString(),
-        privacy_accepted_at: new Date().toISOString(),
-      }, { onConflict: 'id' });
-      if (profileErr) { setErrMsg(profileErr.message); return; }
+        password: pwd,
+        options: {
+          data: {
+            username: cleanUsername,
+            full_name: cleanName,
+            display_name: cleanName,
+            phone: cleanWhatsapp || null,
+            whatsapp: cleanWhatsapp || null,
+            country_code: selectedCountry?.code || null,
+          },
+        },
+      });
+      if (error) {
+        const msg = error.message || '';
+        if (msg.toLowerCase().includes('already registered')) {
+          setErrMsg('Ese email ya está registrado. Inicia sesión o usa otro.');
+        } else if (msg.toLowerCase().includes('invalid') || msg.toLowerCase().includes('email')) {
+          setErrMsg('Revisa el email e intenta de nuevo.');
+        } else {
+          setErrMsg('No pudimos crear la cuenta. Intenta nuevamente.');
+        }
+        return;
+      }
+      if (data?.user) {
+        const { error: profileErr } = await window.supabase.from('profiles').upsert({
+          id: data.user.id,
+          username: cleanUsername,
+          display_name: cleanName,
+          email,
+          country_code: selectedCountry?.code || null,
+          terms_accepted_at: new Date().toISOString(),
+          privacy_accepted_at: new Date().toISOString(),
+        }, { onConflict: 'id' });
+        if (profileErr) {
+          if (profileErr.code === '23505') {
+            if (profileErr.message?.includes('username')) setErrMsg('Ese usuario ya existe. Elegí otro.');
+            else if (profileErr.message?.includes('phone')) setErrMsg('Ese número ya está registrado.');
+            else setErrMsg('Ya existe una cuenta con esos datos.');
+          } else {
+            setErrMsg('No pudimos guardar tu perfil. Intenta de nuevo.');
+          }
+          return;
+        }
+        if (cleanWhatsapp) {
+          await window.supabase
+            .from('profiles')
+            .update({ phone: cleanWhatsapp, whatsapp: cleanWhatsapp })
+            .eq('id', data.user.id);
+        }
+        if (!data.session) {
+          setEmailSent(true);
+          return;
+        }
+        onRegister({ id: data.user.id, name: cleanName, username: cleanUsername, country: selectedCountry, whatsapp: cleanWhatsapp || null, email });
+      }
+    } finally {
+      setIsSubmitting(false);
     }
-    onRegister({ id: data.user.id, name: cleanUsername, username: cleanUsername, email, country: selectedCountry });
   };
+
+  if (emailSent) return (
+    <PhoneShell showNav={false}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 28px' }}>
+        <div style={{
+          width: 64, height: 64, borderRadius: '50%',
+          background: `${SK.gold}22`, border: `2px solid ${SK.gold}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          marginBottom: 20, fontSize: 28,
+        }}>✉️</div>
+        <div style={{ fontFamily: SK.fHead, fontWeight: 700, fontSize: 24, color: SK.text, marginBottom: 10, textAlign: 'center' }}>
+          Revisa tu correo
+        </div>
+        <div style={{ fontSize: 13, color: SK.textMute, lineHeight: 1.6, marginBottom: 6, textAlign: 'center' }}>
+          Te enviamos un link de confirmación a
+        </div>
+        <div style={{ fontFamily: SK.fMono, fontSize: 13, color: SK.gold, fontWeight: 600, marginBottom: 20, textAlign: 'center' }}>
+          {email}
+        </div>
+        <div style={{ fontSize: 12, color: SK.textMute, lineHeight: 1.6, marginBottom: 28, textAlign: 'center' }}>
+          Haz clic en el enlace del correo para activar tu cuenta. Revisa también la carpeta de spam si no lo ves.
+        </div>
+        <button onClick={onLogin} style={{
+          width: '100%', padding: '14px 0', background: SK.gold, color: SK.bg,
+          border: 'none', borderRadius: 10,
+          fontFamily: SK.fHead, fontWeight: 700, fontSize: 14,
+          textTransform: 'uppercase', letterSpacing: 1.2, cursor: 'pointer',
+        }}>Ir al inicio de sesión</button>
+      </div>
+    </PhoneShell>
+  );
 
   return (
     <PhoneShell showNav={false}>
       <div style={{ flex: 1, overflow: 'auto' }}>
         <div style={{ padding: '28px 24px 10px' }}>
           <div style={{ fontSize: 10, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600 }}>crear cuenta</div>
-          <div style={{ fontFamily: SK.fHead, fontSize: 26, fontWeight: 700, color: SK.text, marginTop: 4 }}>Regístrate</div>
+          <div style={{ fontFamily: SK.fHead, fontSize: 26, fontWeight: 700, color: SK.text, marginTop: 4 }}>Regístrate gratis</div>
         </div>
 
         <div style={{ padding: '0 24px 24px' }}>
           <div style={{ background: SK.surface, border: `1px solid ${SK.border}`, borderRadius: 16, padding: 20 }}>
+
+            {/* Nombre */}
+            <div style={{ marginBottom: 14, position: 'relative' }}>
+              <label style={{
+                position: 'absolute', left: 14,
+                top: (focus === 'name' || name) ? 6 : 18,
+                fontSize: (focus === 'name' || name) ? 10 : 14,
+                color: focus === 'name' ? SK.gold : SK.textMute,
+                fontFamily: SK.fBody, fontWeight: 500,
+                transition: 'all 0.15s', pointerEvents: 'none',
+                textTransform: (focus === 'name' || name) ? 'uppercase' : 'none',
+                letterSpacing: (focus === 'name' || name) ? 0.8 : 0,
+              }}>Nombre</label>
+              <input
+                value={name} onChange={e => setName(e.target.value)}
+                onFocus={() => setFocus('name')} onBlur={() => setFocus(null)}
+                disabled={isSubmitting}
+                style={{
+                  width: '100%', background: SK.bgSoft,
+                  border: `1px solid ${focus === 'name' ? SK.gold : SK.border}`,
+                  borderRadius: 8, padding: '22px 14px 8px',
+                  fontFamily: SK.fBody, fontSize: 14, color: SK.text,
+                  outline: 'none', boxSizing: 'border-box',
+                }}
+              />
+            </div>
+
             {/* Username */}
             <div style={{ marginBottom: 14, position: 'relative' }}>
               <label style={{
@@ -413,6 +527,7 @@ function RegisterScreen({ onRegister, onLogin }) {
               <input
                 value={username} onChange={e => setUsername(e.target.value)}
                 onFocus={() => setFocus('username')} onBlur={() => setFocus(null)}
+                disabled={isSubmitting}
                 style={{
                   width: '100%', background: SK.bgSoft,
                   border: `1px solid ${focus === 'username' ? SK.gold : SK.border}`,
@@ -438,6 +553,7 @@ function RegisterScreen({ onRegister, onLogin }) {
               <input
                 value={email} onChange={e => setEmail(e.target.value)}
                 onFocus={() => setFocus('email')} onBlur={() => setFocus(null)}
+                disabled={isSubmitting}
                 style={{
                   width: '100%', background: SK.bgSoft,
                   border: `1px solid ${focus === 'email' ? SK.gold : SK.border}`,
@@ -461,17 +577,23 @@ function RegisterScreen({ onRegister, onLogin }) {
                 letterSpacing: (focus === 'pwd' || pwd) ? 0.8 : 0,
               }}>Contraseña</label>
               <input
-                type="password"
+                type={showPwd ? 'text' : 'password'}
                 value={pwd} onChange={e => setPwd(e.target.value)}
                 onFocus={() => setFocus('pwd')} onBlur={() => setFocus(null)}
+                disabled={isSubmitting}
                 style={{
                   width: '100%', background: SK.bgSoft,
                   border: `1px solid ${focus === 'pwd' ? SK.gold : SK.border}`,
-                  borderRadius: 8, padding: '22px 14px 8px',
+                  borderRadius: 8, padding: '22px 40px 8px 14px',
                   fontFamily: SK.fBody, fontSize: 14, color: SK.text,
                   outline: 'none', boxSizing: 'border-box',
                 }}
               />
+              <button onClick={() => setShowPwd(v => !v)} style={{
+                position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+                background: 'none', border: 'none', cursor: 'pointer',
+                color: SK.textMute, display: 'flex', alignItems: 'center', padding: 0,
+              }}><EyeIcon show={showPwd}/></button>
             </div>
 
             {/* Confirm */}
@@ -485,23 +607,29 @@ function RegisterScreen({ onRegister, onLogin }) {
                 transition: 'all 0.15s', pointerEvents: 'none',
                 textTransform: (focus === 'confirm' || confirmPwd) ? 'uppercase' : 'none',
                 letterSpacing: (focus === 'confirm' || confirmPwd) ? 0.8 : 0,
-              }}>Confirmar</label>
+              }}>Confirmar contraseña</label>
               <input
-                type="password"
+                type={showConfirm ? 'text' : 'password'}
                 value={confirmPwd} onChange={e => setConfirmPwd(e.target.value)}
                 onFocus={() => setFocus('confirm')} onBlur={() => setFocus(null)}
+                disabled={isSubmitting}
                 style={{
                   width: '100%', background: SK.bgSoft,
-                  border: `1px solid ${confirmPwd && !pwdMatch ? SK.coral : focus === 'confirm' ? SK.gold : SK.border}`,
-                  borderRadius: 8, padding: '22px 14px 8px',
+                  border: `1px solid ${pwdMismatch ? SK.coral : focus === 'confirm' ? SK.gold : SK.border}`,
+                  borderRadius: 8, padding: '22px 40px 8px 14px',
                   fontFamily: SK.fBody, fontSize: 14, color: SK.text,
                   outline: 'none', boxSizing: 'border-box',
                 }}
               />
+              <button onClick={() => setShowConfirm(v => !v)} style={{
+                position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+                background: 'none', border: 'none', cursor: 'pointer',
+                color: SK.textMute, display: 'flex', alignItems: 'center', padding: 0,
+              }}><EyeIcon show={showConfirm}/></button>
             </div>
 
             {/* Country */}
-            <div style={{ marginBottom: 18, position: 'relative' }}>
+            <div style={{ marginBottom: 14, position: 'relative' }}>
               <label style={{
                 position: 'absolute', left: 14,
                 top: (focus === 'country' || country) ? 6 : 18,
@@ -517,6 +645,7 @@ function RegisterScreen({ onRegister, onLogin }) {
                 value={country}
                 onChange={e => setCountry(e.target.value)}
                 onFocus={() => setFocus('country')} onBlur={() => setFocus(null)}
+                disabled={isSubmitting}
                 style={{
                   width: '100%', background: SK.bgSoft,
                   border: `1px solid ${focus === 'country' ? SK.gold : SK.border}`,
@@ -537,6 +666,32 @@ function RegisterScreen({ onRegister, onLogin }) {
                   {selectedCountry.flag}
                 </div>
               )}
+            </div>
+
+            {/* WhatsApp (opcional) */}
+            <div style={{ marginBottom: 18, position: 'relative' }}>
+              <label style={{
+                position: 'absolute', left: 14,
+                top: (focus === 'whatsapp' || whatsapp) ? 6 : 18,
+                fontSize: (focus === 'whatsapp' || whatsapp) ? 10 : 14,
+                color: focus === 'whatsapp' ? SK.gold : SK.textMute,
+                fontFamily: SK.fBody, fontWeight: 500,
+                transition: 'all 0.15s', pointerEvents: 'none',
+                textTransform: (focus === 'whatsapp' || whatsapp) ? 'uppercase' : 'none',
+                letterSpacing: (focus === 'whatsapp' || whatsapp) ? 0.8 : 0,
+              }}>WhatsApp (opcional)</label>
+              <input
+                value={whatsapp} onChange={e => setWhatsapp(e.target.value)}
+                onFocus={() => setFocus('whatsapp')} onBlur={() => setFocus(null)}
+                disabled={isSubmitting}
+                style={{
+                  width: '100%', background: SK.bgSoft,
+                  border: `1px solid ${focus === 'whatsapp' ? SK.gold : SK.border}`,
+                  borderRadius: 8, padding: '22px 14px 8px',
+                  fontFamily: SK.fBody, fontSize: 14, color: SK.text,
+                  outline: 'none', boxSizing: 'border-box',
+                }}
+              />
             </div>
 
             <div style={{ marginBottom: 14 }}>
@@ -564,15 +719,15 @@ function RegisterScreen({ onRegister, onLogin }) {
               </label>
             </div>
 
-            <button onClick={handleSubmit} style={{
+            <button onClick={handleSubmit} disabled={!canSubmit || isSubmitting} style={{
               width: '100%', padding: '14px 0',
-              background: canSubmit ? SK.gold : SK.border,
-              color: canSubmit ? SK.bg : SK.textMute,
+              background: canSubmit && !isSubmitting ? SK.gold : SK.border,
+              color: canSubmit && !isSubmitting ? SK.bg : SK.textMute,
               border: 'none', borderRadius: 10,
               fontFamily: SK.fHead, fontWeight: 700, fontSize: 14,
               textTransform: 'uppercase', letterSpacing: 1.2,
-              cursor: canSubmit ? 'pointer' : 'default',
-            }}>Crear cuenta</button>
+              cursor: canSubmit && !isSubmitting ? 'pointer' : 'default',
+            }}>{isSubmitting ? 'Creando cuenta…' : 'Crear cuenta'}</button>
             {errMsg && (
               <div style={{ marginTop: 10, fontSize: 12, color: SK.coral, fontWeight: 600, textAlign: 'center' }}>
                 {errMsg}
