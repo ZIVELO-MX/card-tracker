@@ -1001,6 +1001,24 @@ function TradeHistoryMobile({ tradeOffers = [], userId = null, onTradeOffersChan
   );
 }
 
+function stickerMeta(id) {
+  const country = COUNTRIES.find(c => id.startsWith(c.code) && /^\d+$/.test(id.slice(c.code.length)));
+  if (country) {
+    const num = parseInt(id.slice(country.code.length), 10);
+    let pos = '';
+    if (num === 1) pos = 'ESC';
+    else if (num === 2) pos = 'POR';
+    else if (num >= 3 && num <= 7) pos = 'DEF';
+    else if ((num >= 8 && num <= 12) || num === 14) pos = 'MED';
+    else if (num === 13) pos = 'EQP';
+    else if (num >= 15 && num <= 20) pos = 'DEL';
+    return { flag: country.flag, id, pos, name: country.name };
+  }
+  if (id.startsWith('FWC')) return { flag: '🏆', id, pos: 'ESP', name: 'Copa 2026' };
+  if (id.startsWith('CC')) return { flag: '🥤', id, pos: 'ESP', name: 'Coca-Cola' };
+  return { flag: '⭐', id, pos: '', name: '' };
+}
+
 function ScanTab({ collection = {}, userId = null, onTradeOffersChange = () => {} }) {
   const [query, setQuery] = React.useState('');
   const [loading, setLoading] = React.useState(false);
@@ -1119,23 +1137,14 @@ function ScanTab({ collection = {}, userId = null, onTradeOffersChange = () => {
         <div style={{ background: SK.surface, border: `1px solid ${SK.border}`, borderRadius: 12, padding: 14 }}>
           <div style={{ fontFamily: SK.fMono, fontSize: 13, color: SK.text }}>@{partner.username}</div>
           <div style={{ fontSize: 12, color: SK.textMute, marginTop: 2 }}>{partner.name}</div>
-          <div style={{ marginTop: 10, fontSize: 12, color: SK.textMute }}>Te faltan {needFromPartner.length} · Le faltan {theyNeedFromMe.length}</div>
-          <div style={{ display: 'grid', gap: 8, marginTop: 10 }}>
-            <div>
-              <div style={{ fontSize: 10, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700, marginBottom: 6 }}>Sus repetidas que te faltan</div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {needFromPartner.length === 0 ? <span style={{ fontSize: 11, color: SK.textDim }}>No hay matches.</span> : needFromPartner.map(d => (
-                  <span key={d.id} style={{ fontSize: 11, color: SK.text, background: SK.bgSoft, border: `1px solid ${SK.border}`, borderRadius: 8, padding: '4px 8px' }}>{d.id}</span>
-                ))}
-              </div>
+          <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+            <div style={{ flex: 1, background: SK.bgSoft, border: `1px solid ${SK.border}`, borderRadius: 8, padding: '8px 10px', textAlign: 'center' }}>
+              <div style={{ fontFamily: SK.fMono, fontSize: 18, fontWeight: 700, color: SK.green }}>{needFromPartner.length}</div>
+              <div style={{ fontSize: 10, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 0.8 }}>Puedo recibir</div>
             </div>
-            <div>
-              <div style={{ fontSize: 10, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700, marginBottom: 6 }}>Tus repetidas que le faltan</div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {theyNeedFromMe.length === 0 ? <span style={{ fontSize: 11, color: SK.textDim }}>No hay matches.</span> : theyNeedFromMe.map(d => (
-                  <span key={d.id} style={{ fontSize: 11, color: SK.text, background: SK.bgSoft, border: `1px solid ${SK.border}`, borderRadius: 8, padding: '4px 8px' }}>{d.id}</span>
-                ))}
-              </div>
+            <div style={{ flex: 1, background: SK.bgSoft, border: `1px solid ${SK.border}`, borderRadius: 8, padding: '8px 10px', textAlign: 'center' }}>
+              <div style={{ fontFamily: SK.fMono, fontSize: 18, fontWeight: 700, color: SK.gold }}>{theyNeedFromMe.length}</div>
+              <div style={{ fontSize: 10, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 0.8 }}>Puedo dar</div>
             </div>
           </div>
           <button
@@ -1147,36 +1156,118 @@ function ScanTab({ collection = {}, userId = null, onTradeOffersChange = () => {
       )}
 
       {modalOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 9999, display: 'flex', alignItems: 'flex-end' }} onClick={() => setModalOpen(false)}>
-          <div onClick={e => e.stopPropagation()} style={{ width: '100%', background: SK.surface, borderRadius: '16px 16px 0 0', padding: '16px 14px 20px', maxHeight: '75vh', overflow: 'auto' }}>
-            <div style={{ fontFamily: SK.fHead, fontSize: 15, fontWeight: 700, color: SK.text, textTransform: 'uppercase', marginBottom: 10 }}>Proponer trade</div>
-            <div style={{ display: 'grid', gap: 10 }}>
-              <div>
-                <div style={{ fontSize: 11, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700, marginBottom: 6 }}>Ofreces</div>
-                <div style={{ border: `1px solid ${SK.border}`, borderRadius: 8 }}>
-                  {theyNeedFromMe.map(d => (
-                    <label key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderBottom: `1px solid ${SK.border}` }}>
-                      <input type="checkbox" checked={fromItems.includes(d.id)} onChange={() => togglePick(setFromItems, d.id)}/>
-                      <span style={{ fontFamily: SK.fMono, fontSize: 12, color: SK.text }}>{d.id}</span>
-                    </label>
-                  ))}
-                </div>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', zIndex: 9999, display: 'flex', alignItems: 'flex-end' }} onClick={() => setModalOpen(false)}>
+          <div onClick={e => e.stopPropagation()} style={{ width: '100%', background: SK.surface, borderRadius: '16px 16px 0 0', maxHeight: '82vh', display: 'flex', flexDirection: 'column' }}>
+
+            {/* Modal header */}
+            <div style={{ padding: '14px 16px 10px', borderBottom: `1px solid ${SK.border}`, flexShrink: 0 }}>
+              <div style={{ fontFamily: SK.fHead, fontSize: 15, fontWeight: 700, color: SK.text, textTransform: 'uppercase', letterSpacing: 0.6 }}>
+                Proponer trade con @{partner?.username}
               </div>
-              <div>
-                <div style={{ fontSize: 11, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700, marginBottom: 6 }}>Solicitas</div>
-                <div style={{ border: `1px solid ${SK.border}`, borderRadius: 8 }}>
-                  {needFromPartner.map(d => (
-                    <label key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderBottom: `1px solid ${SK.border}` }}>
-                      <input type="checkbox" checked={toItems.includes(d.id)} onChange={() => togglePick(setToItems, d.id)}/>
-                      <span style={{ fontFamily: SK.fMono, fontSize: 12, color: SK.text }}>{d.id}</span>
-                    </label>
-                  ))}
+              {/* Balance bar */}
+              <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                <div style={{ flex: 1, background: `${SK.coral}15`, border: `1px solid ${SK.coral}40`, borderRadius: 8, padding: '6px 10px', textAlign: 'center' }}>
+                  <div style={{ fontFamily: SK.fMono, fontSize: 16, fontWeight: 800, color: SK.coral }}>−{fromItems.length}</div>
+                  <div style={{ fontSize: 9, color: SK.coral, textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 600 }}>Darás</div>
+                </div>
+                <div style={{ flex: 1, background: `${SK.green}15`, border: `1px solid ${SK.green}40`, borderRadius: 8, padding: '6px 10px', textAlign: 'center' }}>
+                  <div style={{ fontFamily: SK.fMono, fontSize: 16, fontWeight: 800, color: SK.green }}>+{toItems.length}</div>
+                  <div style={{ fontSize: 9, color: SK.green, textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 600 }}>Recibirás</div>
+                </div>
+                <div style={{ flex: 1, background: `${SK.gold}15`, border: `1px solid ${SK.gold}40`, borderRadius: 8, padding: '6px 10px', textAlign: 'center' }}>
+                  <div style={{ fontFamily: SK.fMono, fontSize: 16, fontWeight: 800, color: toItems.length - fromItems.length >= 0 ? SK.green : SK.coral }}>
+                    {toItems.length - fromItems.length > 0 ? '+' : ''}{toItems.length - fromItems.length}
+                  </div>
+                  <div style={{ fontSize: 9, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 600 }}>Balance</div>
                 </div>
               </div>
             </div>
-            <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-              <button onClick={() => setModalOpen(false)} style={{ flex: 1, background: 'transparent', border: `1px solid ${SK.border}`, borderRadius: 8, padding: '10px 0', color: SK.text }}>Cancelar</button>
-              <button onClick={handlePropose} disabled={submitting || fromItems.length === 0 || toItems.length === 0} style={{ flex: 1, background: (submitting || fromItems.length === 0 || toItems.length === 0) ? SK.border : SK.gold, border: 'none', borderRadius: 8, padding: '10px 0', color: (submitting || fromItems.length === 0 || toItems.length === 0) ? SK.textMute : SK.bg, fontFamily: SK.fHead, fontWeight: 700 }}>{submitting ? 'Enviando...' : 'Enviar'}</button>
+
+            {/* Lists */}
+            <div style={{ flex: 1, overflow: 'auto', padding: '10px 16px' }}>
+              {/* Ofreces — tus repetidas que le faltan al partner */}
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 10, color: SK.coral, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700, marginBottom: 6 }}>
+                  Ofreces ({fromItems.length}/{theyNeedFromMe.length} seleccionadas)
+                </div>
+                <div style={{ background: SK.bgSoft, border: `1px solid ${SK.border}`, borderRadius: 10, overflow: 'hidden' }}>
+                  {theyNeedFromMe.map((d, i, a) => {
+                    const m = stickerMeta(d.id);
+                    const checked = fromItems.includes(d.id);
+                    return (
+                      <label key={d.id} style={{
+                        display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
+                        borderBottom: i < a.length - 1 ? `1px solid ${SK.border}` : 'none',
+                        background: checked ? `${SK.coral}12` : 'transparent',
+                        cursor: 'pointer',
+                      }}>
+                        <input type="checkbox" checked={checked} onChange={() => togglePick(setFromItems, d.id)} style={{ accentColor: SK.coral, width: 16, height: 16, flexShrink: 0 }}/>
+                        <span style={{ fontSize: 18, lineHeight: 1 }}>{m.flag}</span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontFamily: SK.fMono, fontSize: 12, fontWeight: 700, color: SK.text }}>{m.id}</div>
+                          <div style={{ fontSize: 10, color: SK.textMute }}>{m.name}</div>
+                        </div>
+                        {m.pos && (
+                          <span style={{ fontFamily: SK.fMono, fontSize: 9, fontWeight: 700, color: SK.coral, background: `${SK.coral}20`, padding: '2px 6px', borderRadius: 4 }}>{m.pos}</span>
+                        )}
+                        <span style={{ fontFamily: SK.fMono, fontSize: 10, color: SK.textDim }}>×{d.qty}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Solicitas — repetidas del partner que te faltan */}
+              <div style={{ marginBottom: 10 }}>
+                <div style={{ fontSize: 10, color: SK.green, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700, marginBottom: 6 }}>
+                  Recibirás ({toItems.length}/{needFromPartner.length} seleccionadas)
+                </div>
+                <div style={{ background: SK.bgSoft, border: `1px solid ${SK.border}`, borderRadius: 10, overflow: 'hidden' }}>
+                  {needFromPartner.map((d, i, a) => {
+                    const m = stickerMeta(d.id);
+                    const checked = toItems.includes(d.id);
+                    return (
+                      <label key={d.id} style={{
+                        display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
+                        borderBottom: i < a.length - 1 ? `1px solid ${SK.border}` : 'none',
+                        background: checked ? `${SK.green}12` : 'transparent',
+                        cursor: 'pointer',
+                      }}>
+                        <input type="checkbox" checked={checked} onChange={() => togglePick(setToItems, d.id)} style={{ accentColor: SK.green, width: 16, height: 16, flexShrink: 0 }}/>
+                        <span style={{ fontSize: 18, lineHeight: 1 }}>{m.flag}</span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontFamily: SK.fMono, fontSize: 12, fontWeight: 700, color: SK.text }}>{m.id}</div>
+                          <div style={{ fontSize: 10, color: SK.textMute }}>{m.name}</div>
+                        </div>
+                        {m.pos && (
+                          <span style={{ fontFamily: SK.fMono, fontSize: 9, fontWeight: 700, color: SK.green, background: `${SK.green}20`, padding: '2px 6px', borderRadius: 4 }}>{m.pos}</span>
+                        )}
+                        <span style={{ fontFamily: SK.fMono, fontSize: 10, color: SK.textDim }}>×{d.qty}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer buttons */}
+            <div style={{ padding: '10px 16px 20px', borderTop: `1px solid ${SK.border}`, flexShrink: 0, display: 'flex', gap: 8 }}>
+              <button onClick={() => setModalOpen(false)} style={{
+                flex: 1, background: 'transparent', border: `1px solid ${SK.border}`,
+                borderRadius: 10, padding: '12px 0', color: SK.text,
+                fontFamily: SK.fHead, fontWeight: 700, fontSize: 12,
+                textTransform: 'uppercase', letterSpacing: 0.8, cursor: 'pointer',
+              }}>Cancelar</button>
+              <button onClick={handlePropose} disabled={submitting || fromItems.length === 0 || toItems.length === 0} style={{
+                flex: 2,
+                background: (submitting || fromItems.length === 0 || toItems.length === 0) ? SK.border : SK.gold,
+                border: 'none', borderRadius: 10, padding: '12px 0',
+                color: (submitting || fromItems.length === 0 || toItems.length === 0) ? SK.textMute : SK.bg,
+                fontFamily: SK.fHead, fontWeight: 700, fontSize: 12,
+                textTransform: 'uppercase', letterSpacing: 0.8, cursor: 'pointer',
+              }}>
+                {submitting ? 'Enviando...' : `Enviar propuesta (−${fromItems.length} / +${toItems.length})`}
+              </button>
             </div>
           </div>
         </div>
@@ -1310,8 +1401,8 @@ function ProfileScreen({ onNav, stats, achievements = [], userData, onUpdateUser
             </div>
           </div>
 
-          {/* Edit button */}
-          <div style={{ padding: '0 20px 20px' }}>
+          {/* Edit + Logout buttons */}
+          <div style={{ padding: '0 20px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
             <button onClick={() => setEditOpen(true)} style={{
               width: '100%', padding: '12px 0',
               background: 'transparent', color: SK.text,
@@ -1320,6 +1411,18 @@ function ProfileScreen({ onNav, stats, achievements = [], userData, onUpdateUser
               textTransform: 'uppercase', letterSpacing: 1,
               cursor: 'pointer',
             }}>Editar perfil</button>
+            <button onClick={async () => {
+              if (!window.confirm('¿Cerrar sesión?')) return;
+              if (window.supabase?.auth) await window.supabase.auth.signOut();
+              window.location.reload();
+            }} style={{
+              width: '100%', padding: '12px 0',
+              background: 'transparent', color: SK.coral,
+              border: `1px solid ${SK.coral}55`, borderRadius: 10,
+              fontFamily: SK.fHead, fontWeight: 700, fontSize: 13,
+              textTransform: 'uppercase', letterSpacing: 1,
+              cursor: 'pointer',
+            }}>Cerrar sesión</button>
           </div>
         </div>
       </PhoneShell>
