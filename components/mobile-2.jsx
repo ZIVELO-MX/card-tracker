@@ -186,7 +186,7 @@ function AlbumScreen({ onNav, initialCountry = null, collection = {}, setCollect
         </div>
 
         {/* Search */}
-        <div style={{ padding: '0 20px 12px' }}>
+        {filter !== 'Por país' && <div style={{ padding: '0 20px 12px' }}>
           <div style={{
             background: SK.surface, border: `1px solid ${SK.border}`,
             borderRadius: 10, padding: '10px 12px',
@@ -205,7 +205,7 @@ function AlbumScreen({ onNav, initialCountry = null, collection = {}, setCollect
               <button onClick={() => setQuery('')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: SK.textMute, fontSize: 16, lineHeight: 1 }}>×</button>
             ) : null}
           </div>
-        </div>
+        </div>}
 
         {/* Filter chips */}
         <div style={{
