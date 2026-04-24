@@ -99,6 +99,8 @@ function AlbumScreen({ onNav, initialCountry = null, collection = {}, setCollect
   const [filter, setFilter] = React.useState('Todos');
   const [query, setQuery] = React.useState('');
   const [dupModal, setDupModal] = React.useState(null);
+  const [countrySearch, setCountrySearch] = React.useState('');
+  const [selectedCountry, setSelectedCountry] = React.useState(null);
 
   const filters = ['Todos', 'Tengo', 'Falta', 'Repetidas', 'Por país', 'Especiales'];
 
@@ -162,6 +164,18 @@ function AlbumScreen({ onNav, initialCountry = null, collection = {}, setCollect
     return true;
   };
 
+  const countryPickerCountries = COUNTRIES.filter(c =>
+    !countrySearch || c.name.toLowerCase().includes(countrySearch.toLowerCase()) || c.flag.includes(countrySearch)
+  );
+
+  const activeSections = (() => {
+    const base = countryOrder || sections;
+    if (filter === 'Especiales') return base.filter(s => s.id === 'fwc' || s.id === 'cc');
+    if (filter === 'Por país' && selectedCountry) return base.filter(s => s.id === selectedCountry);
+    if (filter === 'Por país') return base.filter(s => s.country);
+    return base;
+  })();
+
   return (
     <PhoneShell active="album" onNav={onNav}>
       <div style={{ flex: 1, overflow: 'auto', paddingBottom: 16 }}>
@@ -187,6 +201,9 @@ function AlbumScreen({ onNav, initialCountry = null, collection = {}, setCollect
                 color: SK.text, fontFamily: SK.fBody, fontSize: 13,
               }}
             />
+            {query ? (
+              <button onClick={() => setQuery('')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: SK.textMute, fontSize: 16, lineHeight: 1 }}>×</button>
+            ) : null}
           </div>
         </div>
 
@@ -198,7 +215,10 @@ function AlbumScreen({ onNav, initialCountry = null, collection = {}, setCollect
           {filters.map(f => {
             const on = filter === f;
             return (
-              <button key={f} onClick={() => setFilter(f)} style={{
+              <button key={f} onClick={() => {
+                setFilter(f);
+                if (f !== 'Por país') { setSelectedCountry(null); setCountrySearch(''); }
+              }} style={{
                 flexShrink: 0,
                 padding: '7px 14px',
                 background: on ? SK.gold : 'transparent',
@@ -213,8 +233,83 @@ function AlbumScreen({ onNav, initialCountry = null, collection = {}, setCollect
           })}
         </div>
 
+        {/* Country picker — visible when filter === 'Por país' */}
+        {filter === 'Por país' && (
+          <div style={{ padding: '0 20px 14px' }}>
+            {/* Country search input */}
+            <div style={{
+              background: SK.surface, border: `1px solid ${selectedCountry ? SK.gold : SK.border}`,
+              borderRadius: 10, padding: '9px 12px',
+              display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10,
+            }}>
+              <span style={{ fontSize: 15 }}>🌍</span>
+              <input
+                placeholder="Buscar país..."
+                value={countrySearch}
+                onChange={e => { setCountrySearch(e.target.value); setSelectedCountry(null); }}
+                style={{
+                  flex: 1, background: 'none', border: 'none', outline: 'none',
+                  color: SK.text, fontFamily: SK.fBody, fontSize: 13,
+                }}
+              />
+              {(countrySearch || selectedCountry) && (
+                <button onClick={() => { setCountrySearch(''); setSelectedCountry(null); }} style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  color: SK.textMute, fontSize: 16, lineHeight: 1, padding: 0,
+                }}>×</button>
+              )}
+            </div>
+            {/* Selected country pill */}
+            {selectedCountry && (() => {
+              const c = COUNTRIES.find(x => x.code === selectedCountry);
+              return c ? (
+                <div style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  background: `${SK.gold}22`, border: `1px solid ${SK.gold}55`,
+                  borderRadius: 20, padding: '5px 12px', marginBottom: 10,
+                }}>
+                  <span style={{ fontSize: 16 }}>{c.flag}</span>
+                  <span style={{ fontFamily: SK.fBody, fontSize: 12, fontWeight: 700, color: SK.gold, textTransform: 'uppercase', letterSpacing: 0.5 }}>{c.name}</span>
+                  <button onClick={() => setSelectedCountry(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: SK.gold, fontSize: 14, lineHeight: 1, padding: 0, marginLeft: 2 }}>×</button>
+                </div>
+              ) : null;
+            })()}
+            {/* Flag grid */}
+            {!selectedCountry && (
+              <div style={{
+                display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6,
+                maxHeight: 220, overflowY: 'auto', scrollbarWidth: 'none',
+              }}>
+                {countryPickerCountries.map(c => {
+                  const have = Array.from({ length: c.total || 20 }, (_, i) =>
+                    (collection[`${c.code}${String(i + 1).padStart(2, '0')}`] || 0) > 0 ? 1 : 0
+                  ).reduce((a, b) => a + b, 0);
+                  const pct = Math.round((have / (c.total || 20)) * 100);
+                  return (
+                    <button key={c.code} onClick={() => setSelectedCountry(c.code)} style={{
+                      background: SK.surface, border: `1px solid ${SK.border}`,
+                      borderRadius: 10, padding: '8px 4px',
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+                      cursor: 'pointer',
+                    }}>
+                      <span style={{ fontSize: 22 }}>{c.flag}</span>
+                      <span style={{
+                        fontFamily: SK.fBody, fontSize: 9, fontWeight: 600, color: SK.textMute,
+                        textTransform: 'uppercase', letterSpacing: 0.3,
+                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                        maxWidth: '100%',
+                      }}>{c.name.split(' ')[0]}</span>
+                      <span style={{ fontFamily: SK.fMono, fontSize: 9, color: pct === 100 ? SK.gold : SK.textDim, fontWeight: 700 }}>{pct}%</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Sections */}
-        {(countryOrder || sections).map((sec, si) => {
+        {activeSections.map((sec, si) => {
           const merged = sec.stickers.map(s => {
             const qty = s.id in collection ? collection[s.id] : 0;
             return { ...s, state: qty === 0 ? 'missing' : qty === 1 ? 'have' : 'duplicate', count: qty };
