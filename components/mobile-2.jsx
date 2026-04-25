@@ -1486,15 +1486,9 @@ function ProfileScreen({ onNav, stats, achievements = [], userData, onUpdateUser
           {/* Header */}
           <div style={{ padding: '20px 20px 20px', textAlign: 'center' }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
-              <div style={{
-                width: 80, height: 80, borderRadius: 40,
-                border: `2px solid ${SK.gold}`,
-                background: SK.surface,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontFamily: SK.fHead, fontSize: 30, fontWeight: 700,
-                color: SK.gold,
-                boxShadow: `0 4px 16px -4px ${SK.goldDeep}`,
-              }}>{initials}</div>
+              <div style={{ border: `2px solid ${SK.gold}`, borderRadius: 40, boxShadow: `0 4px 16px -4px ${SK.goldDeep}` }}>
+                <AvatarBubble userData={user} size={80} />
+              </div>
             </div>
             <div style={{ fontFamily: SK.fHead, fontSize: 22, fontWeight: 700, color: SK.text }}>{safeName}</div>
             <div style={{ fontFamily: SK.fMono, fontSize: 13, color: SK.textMute, marginTop: 2 }}>@{safeUsername}</div>

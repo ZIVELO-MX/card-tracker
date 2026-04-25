@@ -251,7 +251,7 @@ function StickerCard({ num, country, player, state, count = 1, size = 'md', type
       }}>
         {country ? (
           <>
-            <span style={{ fontSize: s.fBanner + 3, lineHeight: 1 }}>{country.flag}</span>
+            <FlagImg code={country.code} size={s.fBanner + 3} />
             <span style={{
               fontFamily: SK.fBody, fontSize: s.fBanner, fontWeight: 700,
               color: state === 'missing' ? SK.textDim : SK.textMute,
@@ -476,16 +476,60 @@ const Icon = {
   ),
 };
 
-// Flag "chip" — rounded rectangle with flag emoji or CSS stripes
+function flagIso(code) {
+  if (code === 'SCO') return 'gb-sct';
+  if (code === 'ENG') return 'gb-eng';
+  if (code === 'WAL') return 'gb-wls';
+  return code.toLowerCase();
+}
+
+function FlagImg({ code, size = 20 }) {
+  return (
+    <img
+      src={`https://flagcdn.com/w40/${flagIso(code)}.png`}
+      width={size}
+      height={Math.round(size * 0.72)}
+      style={{ objectFit: 'cover', display: 'inline-block', verticalAlign: 'middle', flexShrink: 0 }}
+      alt=""
+    />
+  );
+}
+
+// Flag "chip" — rounded rectangle with flag image
 function FlagChip({ country, size = 28 }) {
   return (
     <div style={{
       width: size, height: size * 0.72, borderRadius: 4,
-      background: SK.surfaceHi, display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontSize: size * 0.7, overflow: 'hidden',
+      overflow: 'hidden',
       border: `1px solid ${SK.border}`,
+      flexShrink: 0,
     }}>
-      {country.flag}
+      <img
+        src={`https://flagcdn.com/w40/${flagIso(country.code)}.png`}
+        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+        alt={country.name}
+      />
+    </div>
+  );
+}
+
+function AvatarBubble({ userData, size = 40 }) {
+  const safeName = ((userData?.name || userData?.display_name || userData?.username || '?')).trim();
+  const initials = safeName.split(' ').filter(Boolean).map(w => w[0]).join('').slice(0, 2).toUpperCase() || '?';
+  const src = userData?.avatar;
+  const isImg = src && src.startsWith('img/');
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: size / 2,
+      background: isImg ? SK.surfaceHi : SK.gold,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontFamily: SK.fHead, fontSize: Math.round(size * 0.35), fontWeight: 700,
+      color: SK.bg, overflow: 'hidden', flexShrink: 0,
+    }}>
+      {isImg
+        ? <img src={src} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} alt="" />
+        : initials
+      }
     </div>
   );
 }
@@ -493,6 +537,6 @@ function FlagChip({ country, size = 28 }) {
 Object.assign(window, {
   StickerArt, EscudoArt, EquipoArt, EspecialArt,
   StickerCard, LogoMark, Logo,
-  ProgressBar, DonutProgress, Icon, FlagChip,
+  ProgressBar, DonutProgress, Icon, FlagChip, FlagImg, AvatarBubble,
   LoadingSpinner, EmptyState,
 });

@@ -6,42 +6,102 @@ window.MOBILE_W = MOBILE_W;
 window.MOBILE_H = MOBILE_H;
 
 // ─────────────────────────────────────────────────────────────
-// Bottom nav
+// Bottom nav — hamburger drawer
 // ─────────────────────────────────────────────────────────────
 function BottomNav({ active, onNav }) {
+  const [open, setOpen] = React.useState(false);
   const items = [
-    { id: 'home', label: 'Inicio', Icon: Icon.Home },
-    { id: 'album', label: 'Álbum', Icon: Icon.Grid },
-    { id: 'trade', label: 'Trade', Icon: Icon.Swap },
-    { id: 'marketplace', label: 'Market', Icon: Icon.Store },
-    { id: 'profile', label: 'Perfil', Icon: Icon.User },
+    { id: 'home',        label: 'Inicio',  Icon: Icon.Home  },
+    { id: 'album',       label: 'Álbum',   Icon: Icon.Grid  },
+    { id: 'trade',       label: 'Trade',   Icon: Icon.Swap  },
+    { id: 'marketplace', label: 'Market',  Icon: Icon.Store },
+    { id: 'profile',     label: 'Perfil',  Icon: Icon.User  },
   ];
-  return (
+  const current = items.find(i => i.id === active) || items[0];
+  const handleNav = (id) => { setOpen(false); onNav(id); };
+
+  const burgerBar = (extra) => (
+    <span style={{
+      display: 'block', width: 22, height: 2,
+      background: open ? SK.gold : SK.textMute,
+      borderRadius: 2, transition: 'transform 0.2s, opacity 0.2s, background 0.2s',
+      ...extra,
+    }}/>
+  );
+
+  const bar = (
     <div style={{
-      flexShrink: 0,
-      background: SK.surface,
-      borderTop: `1px solid ${SK.border}`,
-      paddingBottom: 18,
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      padding: '12px 20px 10px',
     }}>
-      <div style={{ display: 'flex', justifyContent: 'space-around', padding: '10px 12px 6px' }}>
-        {items.map(it => {
-          const on = active === it.id;
-          const c = on ? SK.gold : SK.textMute;
-          return (
-            <button key={it.id} onClick={() => onNav(it.id)} style={{
-              background: 'none', border: 'none', cursor: 'pointer',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-              padding: '6px 12px',
-            }}>
-              <it.Icon s={22} c={c} filled={on}/>
-              <span style={{
-                fontFamily: SK.fBody, fontSize: 10, fontWeight: on ? 700 : 500,
-                color: c, letterSpacing: 0.3, textTransform: 'uppercase',
-              }}>{it.label}</span>
-            </button>
-          );
-        })}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <LogoMark size={22}/>
+        <span style={{
+          fontFamily: SK.fHead, fontSize: 16, fontWeight: 700,
+          color: SK.text, textTransform: 'lowercase', letterSpacing: 0.3,
+        }}>stickio</span>
       </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <span style={{
+          fontFamily: SK.fBody, fontSize: 11, fontWeight: 600,
+          color: SK.textMute, textTransform: 'uppercase', letterSpacing: 0.4,
+        }}>{current.label}</span>
+        <button
+          onClick={() => setOpen(o => !o)}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, display: 'flex', flexDirection: 'column', gap: 5 }}
+        >
+          {burgerBar({ transform: open ? 'rotate(45deg) translate(5px, 5px)' : 'none' })}
+          {burgerBar({ opacity: open ? 0 : 1 })}
+          {burgerBar({ transform: open ? 'rotate(-45deg) translate(5px, -5px)' : 'none' })}
+        </button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{ flexShrink: 0, background: SK.surface, borderBottom: `1px solid ${SK.border}` }}>
+      {bar}
+
+      {open && (
+        <>
+          {/* Backdrop */}
+          <div
+            onClick={() => setOpen(false)}
+            style={{ position: 'absolute', inset: 0, zIndex: 40, background: 'rgba(0,0,0,0.55)' }}
+          />
+          {/* Drawer — cae hacia abajo */}
+          <div style={{
+            position: 'absolute', top: 0, left: 0, right: 0, zIndex: 50,
+            background: SK.surface,
+            borderBottom: `1px solid ${SK.border}`,
+            borderRadius: '0 0 18px 18px',
+          }}>
+            {bar}
+            <div style={{
+              display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: 8, padding: '8px 16px 20px',
+            }}>
+              {items.map(it => {
+                const on = active === it.id;
+                return (
+                  <button key={it.id} onClick={() => handleNav(it.id)} style={{
+                    background: on ? `${SK.gold}18` : SK.surfaceHi,
+                    border: `1px solid ${on ? SK.gold + '55' : SK.border}`,
+                    borderRadius: 12, cursor: 'pointer', padding: '14px 8px',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                  }}>
+                    <it.Icon s={24} c={on ? SK.gold : SK.textMute} filled={on}/>
+                    <span style={{
+                      fontFamily: SK.fBody, fontSize: 11, fontWeight: on ? 700 : 500,
+                      color: on ? SK.gold : SK.textMute, letterSpacing: 0.3, textTransform: 'uppercase',
+                    }}>{it.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -64,10 +124,10 @@ function PhoneShell({ children, showNav = true, active, onNav }) {
       paddingTop: 'env(safe-area-inset-top, 0px)',
       paddingBottom: 'env(safe-area-inset-bottom, 0px)',
     }}>
+      {showNav && <BottomNav active={active} onNav={onNav}/>}
       <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         {children}
       </div>
-      {showNav && <BottomNav active={active} onNav={onNav}/>}
     </div>
   );
 }
@@ -374,7 +434,12 @@ function RegisterScreen({ onRegister, onLogin }) {
       setErrMsg('No aceptamos emails desechables. Usa un email permanente.');
       return;
     }
-    
+
+    if (pwd.length < 6) {
+      setErrMsg('La contraseña debe tener al menos 6 caracteres.');
+      return;
+    }
+
     const normalizeText = (text) => {
       return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
     };
@@ -434,7 +499,7 @@ function RegisterScreen({ onRegister, onLogin }) {
       if (error) {
         const msg = error.message || '';
         if (msg.toLowerCase().includes('already registered')) {
-          setErrMsg('Ese email ya está registrado. Inicia sesión o usa otro.');
+          setErrMsg('Ese email ya está registrado. Inicia sesión o usa otro correo.');
         } else if (msg.toLowerCase().includes('invalid') || msg.toLowerCase().includes('email')) {
           setErrMsg('Revisa el email e intenta de nuevo.');
         } else {
@@ -442,7 +507,15 @@ function RegisterScreen({ onRegister, onLogin }) {
         }
         return;
       }
+      // Si Supabase retorna user sin identities = email enumeration protection activo
+      // (el email ya existía pero Supabase no revela el error — igual envía un correo)
+      if (data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+        setErrMsg('Ese email ya está registrado. Inicia sesión o usa otro correo.');
+        return;
+      }
       if (data?.user) {
+        // Intentar crear/actualizar el perfil. Si falla por RLS (sin sesión activa),
+        // el perfil se creará via trigger o al primer login. No bloquear el flujo.
         const { error: profileErr } = await window.supabase.from('profiles').upsert({
           id: data.user.id,
           username: cleanUsername,
@@ -454,20 +527,27 @@ function RegisterScreen({ onRegister, onLogin }) {
         }, { onConflict: 'id' });
         if (profileErr) {
           if (profileErr.code === '23505') {
-            if (profileErr.message?.includes('username')) setErrMsg('Ese usuario ya existe. Elegí otro.');
-            else if (profileErr.message?.includes('phone')) setErrMsg('Ese número ya está registrado.');
-            else setErrMsg('Ya existe una cuenta con esos datos.');
-          } else {
-            setErrMsg('No pudimos guardar tu perfil. Intenta de nuevo.');
+            if (profileErr.message?.includes('username')) {
+              setErrMsg('Ese usuario ya existe. Elegí otro.');
+              return;
+            } else if (profileErr.message?.includes('phone')) {
+              setErrMsg('Ese número ya está registrado.');
+              return;
+            }
+            // Otro conflicto único — la cuenta se creó igual, mostrar confirmación
           }
-          return;
+          // Si el error es de permisos (RLS sin sesión activa), no bloquear el flujo
+          // El perfil se completará al confirmar el correo y hacer login
         }
+        // Intentar guardar whatsapp/phone independientemente del resultado del upsert
+        // (el trigger ya lo guarda en nuevos registros, esto es respaldo para el flujo sin sesión)
         if (cleanWhatsapp) {
           await window.supabase
             .from('profiles')
             .update({ phone: cleanWhatsapp, whatsapp: cleanWhatsapp })
             .eq('id', data.user.id);
         }
+        // signUp fue exitoso — el correo de confirmación ya fue enviado por Supabase
         if (!data.session) {
           setEmailSent(true);
           return;
@@ -723,8 +803,8 @@ function RegisterScreen({ onRegister, onLogin }) {
                 ))}
               </select>
               {selectedCountry && (
-                <div style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 18, pointerEvents: 'none' }}>
-                  {selectedCountry.flag}
+                <div style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+                  <FlagImg code={selectedCountry.code} size={18} />
                 </div>
               )}
             </div>
@@ -1219,7 +1299,7 @@ function TeamCard({ country, onNavToCountry }) {
       cursor: 'pointer', textAlign: 'left',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontSize: 28 }}>{country.flag}</span>
+        <FlagImg code={country.code} size={28} />
         <span style={{ fontFamily: SK.fMono, fontSize: 11, color: SK.textMute }}>
           {country.have}/{country.total}
         </span>
