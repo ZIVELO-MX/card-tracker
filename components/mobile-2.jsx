@@ -3,7 +3,7 @@
 // ─────────────────────────────────────────────────────────────
 // Generate demo sticker data for a country
 // ─────────────────────────────────────────────────────────────
-function stickersFor(country, startNum) {
+function stickersFor(country) {
   const arr = [];
   for (let i = 0; i < country.total; i++) {
     const num = i + 1; // local 1-20 numbering per country section
@@ -105,7 +105,7 @@ function AlbumScreen({ onNav, initialCountry = null, collection = {}, setCollect
     ...COUNTRIES.map((c, i) => ({
       id: c.code,
       country: c,
-      stickers: stickersFor(c, 1 + i * 20),
+      stickers: stickersFor(c),
     })),
     { id: 'cc', label: 'Coca-Cola', flag: '🥤', total: 12, stickers: ccStickers() },
   ];
@@ -457,7 +457,7 @@ function MarketplaceScreen({ onNav, userData, collection = {}, marketplaceListin
       const num = code ? parseInt(id.slice(code.length), 10) : (parseInt(id.replace(/\D/g, ''), 10) || 0);
       let player = `Estampa #${String(num).padStart(3,'0')}`;
       if (country && window.stickersFor) {
-        const match = window.stickersFor(country, 1).find(s => s.id === id);
+        const match = window.stickersFor(country).find(s => s.id === id);
         if (match && match.player) player = match.player;
       }
       const flag = country?.flag || '';
@@ -653,13 +653,14 @@ function MarketplaceScreen({ onNav, userData, collection = {}, marketplaceListin
                     ))}
                   </div>
                   {l.user_id !== userId && (
-                    <div style={{ marginTop: 10, display: 'flex', justifyContent: 'flex-end' }}>
+                    <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                      <span style={{ fontFamily: SK.fMono, fontSize: 11, color: SK.textMute }}>@{l.profile?.username || l.userName || 'usuario'}</span>
                       {contactHrefFor(l) ? (
-                        <a href={contactHrefFor(l)} target="_blank" rel="noopener noreferrer" style={{ fontFamily: SK.fHead, fontSize: 11, fontWeight: 700, letterSpacing: 0.8, textTransform: 'uppercase', color: SK.gold, textDecoration: 'none', border: `1px solid ${SK.gold}55`, borderRadius: 8, padding: '7px 10px' }}>
+                        <a href={contactHrefFor(l)} target="_blank" rel="noopener noreferrer" style={{ fontFamily: SK.fHead, fontSize: 11, fontWeight: 700, letterSpacing: 0.8, textTransform: 'uppercase', color: SK.gold, textDecoration: 'none', border: `1px solid ${SK.gold}55`, borderRadius: 8, padding: '7px 10px', flexShrink: 0 }}>
                           WhatsApp
                         </a>
                       ) : (
-                        <span style={{ fontFamily: SK.fMono, fontSize: 11, color: SK.textMute, userSelect: 'all' }}>@{l.profile?.username || l.userName || 'usuario'}</span>
+                        <span style={{ fontFamily: SK.fBody, fontSize: 11, color: SK.textDim, fontStyle: 'italic' }}>Sin contacto</span>
                       )}
                     </div>
                   )}
@@ -900,6 +901,16 @@ function TradeHistoryMobile({ tradeOffers = [], userId = null, onTradeOffersChan
       {children}
     </div>
   );
+
+  if (tradeOffers.length === 0) {
+    return (
+      <div style={{ padding: '0 20px 20px' }}>
+        <div style={{ background: SK.surface, border: `1px solid ${SK.border}`, borderRadius: 12 }}>
+          <EmptyState icon="🤝" title="Sin intercambios aún" sub='Buscá un @usuario en "Buscar @" y enviá tu primera propuesta.'/>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>

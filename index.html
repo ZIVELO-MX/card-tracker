@@ -2,19 +2,35 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
 <title>Stickio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@500;600;700&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="manifest" href="manifest.json">
 <link rel="icon" href="img/stickio-favicon.svg" type="image/svg+xml">
 <link rel="icon" href="img/stickio-favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="img/stickio-pwa-icon.svg" sizes="180x180">
+<link rel="apple-touch-icon" href="img/stickio-app-icon.svg" sizes="512x512">
+<link rel="icon" href="img/stickio-pwa-icon.svg" sizes="any">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Stickio">
+<meta name="theme-color" content="#0A1628">
 <style>
+  :root {
+    --safe-area-top: env(safe-area-inset-top, 0px);
+    --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-area-left: env(safe-area-inset-left, 0px);
+    --safe-area-right: env(safe-area-inset-right, 0px);
+  }
   html, body {
     margin: 0; padding: 0;
     background: #0A1628;
     overflow: hidden;
     width: 100vw; height: 100vh;
+    padding-top: var(--safe-area-top);
+    padding-bottom: var(--safe-area-bottom);
   }
   * { box-sizing: border-box; }
   ::-webkit-scrollbar { width: 0; height: 0; }
@@ -820,7 +836,7 @@ function App() {
     if (isMobile) {
       switch (nav) {
         case 'home':        return <DashboardScreen onNav={handleNav} onNavToCountry={handleNavToCountry} stats={stats} collection={collection} activityLog={activityLog} userId={userId} notifications={notifications}/>;
-        case 'album':       return <AlbumScreen onNav={handleNav} initialCountry={albumCountry} collection={collection} setCollection={setCollection} onStickerChange={syncSticker} notifications={notifications}/>;
+        case 'album':       return <AlbumScreen onNav={handleNav} initialCountry={albumCountry} collection={collection} setCollection={setCollection} onStickerChange={syncSticker}/>;
         case 'trade':       return <TradeScreen onNav={handleNav} collection={collection} userData={userData} notifications={notifications} tradeOffers={tradeOffers} onTradeOffersChange={setTradeOffers} userId={userId}/>;
         case 'marketplace': return <MarketplaceScreen onNav={handleNav} userData={userData} collection={collection} notifications={notifications} marketplaceListings={marketplaceListings} onMarketplaceListingsChange={setMarketplaceListings} userId={userId}/>;
         case 'profile':     return <ProfileScreen onNav={handleNav} stats={stats} achievements={achievements} userData={userData} onUpdateUser={handleUpdateUser} notifications={notifications} tradeOffers={tradeOffers} userId={userId} collection={collection} activityLog={activityLog}/>;
