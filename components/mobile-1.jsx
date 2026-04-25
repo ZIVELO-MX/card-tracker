@@ -382,7 +382,15 @@ function RegisterScreen({ onRegister, onLogin }) {
     setIsSubmitting(true);
     const cleanName     = normalizeText(name);
     const cleanUsername = normalizeText(username).replace(/\s+/g, '').toLowerCase();
-    const cleanWhatsapp = whatsapp.trim();
+    const rawWhatsapp = whatsapp.trim();
+    const cleanWhatsapp = window.normalizeIntlPhone
+      ? window.normalizeIntlPhone(rawWhatsapp)
+      : rawWhatsapp.replace(/\D/g, '');
+    if (rawWhatsapp && !(window.isValidIntlPhone ? window.isValidIntlPhone(cleanWhatsapp) : (cleanWhatsapp.length >= 10 && cleanWhatsapp.length <= 15))) {
+      setErrMsg('El WhatsApp debe tener entre 10 y 15 dígitos.');
+      setIsSubmitting(false);
+      return;
+    }
     if (!window.supabase?.auth) {
       setErrMsg('Supabase no está configurado.');
       setIsSubmitting(false);
@@ -399,12 +407,12 @@ function RegisterScreen({ onRegister, onLogin }) {
         return;
       }
       if (cleanWhatsapp) {
-        const { data: existingPhone } = await window.supabase
+        const { data: existingPhone, error: existingPhoneErr } = await window.supabase
           .from('profiles')
           .select('id')
-          .eq('phone', cleanWhatsapp)
+          .or(`phone.eq.${cleanWhatsapp},whatsapp.eq.${cleanWhatsapp}`)
           .limit(1);
-        if (existingPhone && existingPhone.length) {
+        if (!existingPhoneErr && existingPhone && existingPhone.length) {
           setErrMsg('Ese número de WhatsApp ya está registrado.');
           return;
         }
@@ -734,9 +742,10 @@ function RegisterScreen({ onRegister, onLogin }) {
                 letterSpacing: (focus === 'whatsapp' || whatsapp) ? 0.8 : 0,
               }}>WhatsApp (opcional)</label>
               <input
-                value={whatsapp} onChange={e => setWhatsapp(e.target.value)}
+                value={whatsapp} onChange={e => setWhatsapp(e.target.value.replace(/[^\d\s\-\+\(\)]/g, ''))}
                 onFocus={() => setFocus('whatsapp')} onBlur={() => setFocus(null)}
                 disabled={isSubmitting}
+                inputMode="tel"
                 style={{
                   width: '100%', background: SK.bgSoft,
                   border: `1px solid ${focus === 'whatsapp' ? SK.gold : SK.border}`,
