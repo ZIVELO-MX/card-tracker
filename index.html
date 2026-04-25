@@ -270,22 +270,26 @@ async function fetchTradeOffers(userId) {
 
 async function fetchMarketplaceListings(userId = null) {
   if (!window.supabase?.from) return [];
-  const { data: activeData } = await window.supabase
+  const { data: activeData, error: activeError } = await window.supabase
     .from('marketplace_listings')
     .select('*, profile:user_id(username, display_name, country_code, phone, whatsapp)')
     .eq('status', 'active')
     .order('created_at', { ascending: false })
     .limit(100);
 
+  if (activeError) throw activeError;
+
   if (!userId) return activeData || [];
 
-  const { data: mineClosedData } = await window.supabase
+  const { data: mineClosedData, error: mineError } = await window.supabase
     .from('marketplace_listings')
     .select('*, profile:user_id(username, display_name, country_code, phone, whatsapp)')
     .eq('user_id', userId)
     .eq('status', 'closed')
     .order('created_at', { ascending: false })
     .limit(100);
+
+  if (mineError) throw mineError;
 
   const byId = new Map();
   [...(activeData || []), ...(mineClosedData || [])].forEach(item => {
@@ -309,11 +313,13 @@ async function createMarketplaceListing(userId, listing) {
   return { data, error };
 }
 
-async function closeMarketplaceListing(listingId) {
+async function closeMarketplaceListing(listingId, userId) {
   if (!window.supabase?.from) return { error: 'Sin conexión' };
-  const { error } = await window.supabase.from('marketplace_listings')
+  const query = window.supabase.from('marketplace_listings')
     .update({ status: 'closed', updated_at: new Date() })
     .eq('id', listingId);
+  if (userId) query.eq('user_id', userId);
+  const { error } = await query;
   if (!error) logActivity('closed', listingId);
   return { error };
 }
@@ -699,6 +705,8 @@ function App() {
   }, [userId]);
 
   const [marketplaceListings, setMarketplaceListings] = React.useState([]);
+  const [marketplaceLoading, setMarketplaceLoading] = React.useState(false);
+  const [marketplaceError, setMarketplaceError] = React.useState(null);
 
   const shouldKeepMarketplaceListing = React.useCallback((listing) => {
     if (!listing) return false;
@@ -717,7 +725,12 @@ function App() {
   }, []);
 
   React.useEffect(() => {
-    fetchMarketplaceListings(userId).then(setMarketplaceListings);
+    setMarketplaceLoading(true);
+    setMarketplaceError(null);
+    fetchMarketplaceListings(userId)
+      .then(data => { setMarketplaceListings(data); })
+      .catch(() => { setMarketplaceError('No se pudieron cargar las publicaciones.'); })
+      .finally(() => { setMarketplaceLoading(false); });
   }, [userId]);
 
   React.useEffect(() => {
@@ -846,7 +859,7 @@ function App() {
         case 'home':        return <DashboardScreen onNav={handleNav} onNavToCountry={handleNavToCountry} stats={stats} collection={collection} activityLog={activityLog} userId={userId} notifications={notifications}/>;
         case 'album':       return <AlbumScreen onNav={handleNav} initialCountry={albumCountry} collection={collection} setCollection={setCollection} onStickerChange={syncSticker}/>;
         case 'trade':       return <TradeScreen onNav={handleNav} collection={collection} userData={userData} notifications={notifications} tradeOffers={tradeOffers} onTradeOffersChange={setTradeOffers} userId={userId}/>;
-        case 'marketplace': return <MarketplaceScreen onNav={handleNav} userData={userData} collection={collection} notifications={notifications} marketplaceListings={marketplaceListings} onMarketplaceListingsChange={setMarketplaceListings} userId={userId}/>;
+        case 'marketplace': return <MarketplaceScreen onNav={handleNav} userData={userData} collection={collection} notifications={notifications} marketplaceListings={marketplaceListings} onMarketplaceListingsChange={setMarketplaceListings} userId={userId} marketplaceLoading={marketplaceLoading} marketplaceError={marketplaceError}/>;
         case 'profile':     return <ProfileScreen onNav={handleNav} stats={stats} achievements={achievements} userData={userData} onUpdateUser={handleUpdateUser} notifications={notifications} tradeOffers={tradeOffers} userId={userId} collection={collection} activityLog={activityLog}/>;
         default:        return <DashboardScreen onNav={handleNav} onNavToCountry={handleNavToCountry} stats={stats} collection={collection} activityLog={activityLog} userId={userId} notifications={notifications}/>;
       }
@@ -855,7 +868,7 @@ function App() {
       case 'home':        return <DashboardDesktop onNav={handleNav} onNavToCountry={handleNavToCountry} stats={stats} collection={collection} activityLog={activityLog} theme={theme} onToggleTheme={handleToggleTheme} userData={userData} notifications={notifications}/>;
       case 'album':       return <AlbumDesktop onNav={handleNav} initialCountry={albumCountry} theme={theme} onToggleTheme={handleToggleTheme} collection={collection} setCollection={setCollection} onStickerChange={syncSticker} userData={userData} stats={stats} notifications={notifications}/>;
       case 'trade':       return <TradeDesktop onNav={handleNav} theme={theme} onToggleTheme={handleToggleTheme} collection={collection} userData={userData} stats={stats} notifications={notifications} tradeOffers={tradeOffers} onTradeOffersChange={setTradeOffers} userId={userId}/>;
-      case 'marketplace': return <MarketplaceDesktop onNav={handleNav} userData={userData} theme={theme} onToggleTheme={handleToggleTheme} collection={collection} stats={stats} notifications={notifications} marketplaceListings={marketplaceListings} onMarketplaceListingsChange={setMarketplaceListings} userId={userId}/>;
+      case 'marketplace': return <MarketplaceDesktop onNav={handleNav} userData={userData} theme={theme} onToggleTheme={handleToggleTheme} collection={collection} stats={stats} notifications={notifications} marketplaceListings={marketplaceListings} onMarketplaceListingsChange={setMarketplaceListings} userId={userId} marketplaceLoading={marketplaceLoading} marketplaceError={marketplaceError}/>;
       case 'profile':     return <ProfileDesktop onNav={handleNav} stats={stats} achievements={achievements} userData={userData} theme={theme} onToggleTheme={handleToggleTheme} onUpdateUser={handleUpdateUser} collection={collection} activityLog={activityLog} notifications={notifications} tradeOffers={tradeOffers} userId={userId}/>;
       case 'admin':       return <AdminDesktop onNav={handleNav} userData={userData} theme={theme} onToggleTheme={handleToggleTheme} fetchStats={fetchAdminStats} stats={stats} notifications={notifications}/>;
       default:        return <DashboardDesktop onNav={handleNav} onNavToCountry={handleNavToCountry} stats={stats} collection={collection} activityLog={activityLog} theme={theme} onToggleTheme={handleToggleTheme} userData={userData} notifications={notifications}/>;

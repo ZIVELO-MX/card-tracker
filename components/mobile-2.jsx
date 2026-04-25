@@ -406,7 +406,7 @@ function AlbumScreen({ onNav, initialCountry = null, collection = {}, setCollect
 // ─────────────────────────────────────────────────────────────
 // SCREEN 3.5 — Marketplace
 // ─────────────────────────────────────────────────────────────
-function MarketplaceScreen({ onNav, userData, collection = {}, marketplaceListings = [], onMarketplaceListingsChange = () => {}, userId = null }) {
+function MarketplaceScreen({ onNav, userData, collection = {}, marketplaceListings = [], onMarketplaceListingsChange = () => {}, userId = null, marketplaceLoading = false, marketplaceError = null }) {
   const listings = marketplaceListings;
   const feedListings = React.useMemo(() => listings.filter(l => l.status === 'active'), [listings]);
   const [tab, setTab] = React.useState('feed');
@@ -499,7 +499,7 @@ function MarketplaceScreen({ onNav, userData, collection = {}, marketplaceListin
     const num = parseInt(numMatch[1], 10);
     const player = raw.replace(/^#?\d+\s*/, '').trim() || `Estampa #${String(num).padStart(3, '0')}`;
     const id = `MANUAL-${num}-${player.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
-    if (!newCards.find(c => c.id === id)) {
+    if (!newCards.find(c => c.num === num)) {
       setNewCards(prev => [...prev, { id, num, player, country: null }]);
     }
     setManualCard('');
@@ -535,7 +535,7 @@ function MarketplaceScreen({ onNav, userData, collection = {}, marketplaceListin
   };
 
   const handleCloseListing = async (listingId) => {
-    const { error } = await window.closeMarketplaceListing(listingId);
+    const { error } = await window.closeMarketplaceListing(listingId, userId);
     if (!error) {
       onMarketplaceListingsChange(prev => (prev || []).map(l =>
         l.id === listingId ? { ...l, status: 'closed', updated_at: new Date().toISOString() } : l
@@ -633,7 +633,13 @@ function MarketplaceScreen({ onNav, userData, collection = {}, marketplaceListin
               })}
             </div>
 
-            {filtered.length === 0 && (
+            {marketplaceLoading && (
+              <div style={{ textAlign: 'center', padding: 32, color: SK.textMute, fontSize: 12 }}>Cargando publicaciones...</div>
+            )}
+            {!marketplaceLoading && marketplaceError && (
+              <div style={{ background: SK.surface, border: `1px dashed ${SK.coral}55`, borderRadius: 12, padding: 24, textAlign: 'center', fontSize: 12, color: SK.coral }}>{marketplaceError}</div>
+            )}
+            {!marketplaceLoading && !marketplaceError && filtered.length === 0 && (
               <div style={{ background: SK.surface, border: `1px dashed ${SK.border}`, borderRadius: 12, padding: 32, textAlign: 'center' }}>
                 <Icon.Store s={32} c={SK.textDim}/>
                 <div style={{ fontFamily: SK.fHead, fontSize: 14, fontWeight: 700, color: SK.textMute, marginTop: 10, textTransform: 'uppercase', letterSpacing: 0.5 }}>Sin publicaciones</div>
@@ -652,7 +658,7 @@ function MarketplaceScreen({ onNav, userData, collection = {}, marketplaceListin
                       </div>
                     ))}
                   </div>
-                  {l.user_id !== userId && (
+                  {(l.user_id !== userId && l.userId !== userId) && (
                     <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                       <span style={{ fontFamily: SK.fMono, fontSize: 11, color: SK.textMute }}>@{l.profile?.username || l.userName || 'usuario'}</span>
                       {contactHrefFor(l) ? (
@@ -746,6 +752,7 @@ function MarketplaceScreen({ onNav, userData, collection = {}, marketplaceListin
               </div>
 
               {pubError && <div style={{ fontSize: 11, color: SK.coral, marginBottom: 8 }}>{pubError}</div>}
+              {!userId && <div style={{ fontSize: 11, color: SK.textMute, textAlign: 'center', marginBottom: 8 }}>Inicia sesión para publicar</div>}
 
               <button
                 onClick={handlePublish}

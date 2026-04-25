@@ -138,7 +138,7 @@ function ListingCard({ listing, onContact, userId }) {
       )}
 
       {/* Action */}
-      {isActive && listing.user_id !== userId && (
+      {isActive && listing.user_id !== userId && listing.userId !== userId && (
         <button
           onClick={() => onContact && onContact(listing)}
           style={{
@@ -417,7 +417,7 @@ function MarketplaceNew({ userData, collection = {}, onPublish, publishing = fal
     setDupSelect('');
   };
 
-  const removeCard = (num) => setCards(prev => prev.filter(c => c.num !== num));
+  const removeCard = (num, country) => setCards(prev => prev.filter(c => !(c.num === num && c.country === country)));
 
   const canSubmit = cards.length > 0 && !publishing;
 
@@ -429,7 +429,8 @@ function MarketplaceNew({ userData, collection = {}, onPublish, publishing = fal
       description: desc.trim(),
       location: locCountry ? { country: locCountry, state: locState.trim(), city: locCity.trim() } : null,
     };
-    await onPublish?.(listing);
+    const result = await onPublish?.(listing);
+    if (result?.error) return;
     setCards([]);
     setDesc('');
     setCardInput('');
@@ -580,7 +581,7 @@ function MarketplaceNew({ userData, collection = {}, onPublish, publishing = fal
         ) : (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {cards.map(card => (
-              <div key={card.num} style={{
+              <div key={`${card.num}-${card.country || 'x'}`} style={{
                 display: 'flex', alignItems: 'center', gap: 6,
                 background: SK.surface, border: `1px solid ${SK.gold}55`,
                 borderRadius: 8, padding: '5px 8px 5px 10px',
@@ -589,7 +590,7 @@ function MarketplaceNew({ userData, collection = {}, onPublish, publishing = fal
                   #{String(card.num).padStart(3, '0')}
                 </span>
                 <span style={{ fontSize: 11, color: SK.textMute }}>{card.player}</span>
-                <button onClick={() => removeCard(card.num)} style={{
+                <button onClick={() => removeCard(card.num, card.country)} style={{
                   background: 'none', border: 'none', cursor: 'pointer',
                   padding: 2, display: 'flex', alignItems: 'center',
                   color: SK.textDim,
@@ -705,8 +706,8 @@ function MarketplaceNew({ userData, collection = {}, onPublish, publishing = fal
           </div>
           <ListingCard listing={{
             id: 'preview',
-            userId: user.username,
-            userName: user.username,
+            userId: userData?.username,
+            userName: userData?.username,
             type,
             cards,
             description: desc,
@@ -975,7 +976,7 @@ function ContactModal({ listing, onClose }) {
 // ─────────────────────────────────────────────────────────────
 // DESKTOP — Marketplace (main component)
 // ─────────────────────────────────────────────────────────────
-function MarketplaceDesktop({ onNav, userData, theme, onToggleTheme, collection = {}, stats = null, marketplaceListings = [], onMarketplaceListingsChange = () => {}, userId = null }) {
+function MarketplaceDesktop({ onNav, userData, theme, onToggleTheme, collection = {}, stats = null, marketplaceListings = [], onMarketplaceListingsChange = () => {}, userId = null, marketplaceLoading = false, marketplaceError = null }) {
   const [tab, setTab]         = React.useState('feed');
   const [contact, setContact] = React.useState(null);
   const [publishing, setPublishing] = React.useState(false);
@@ -988,18 +989,19 @@ function MarketplaceDesktop({ onNav, userData, theme, onToggleTheme, collection 
   ).length;
 
   const handlePublish = async (newListing) => {
-    if (!userId) return;
+    if (!userId) return { error: 'Sin sesión' };
     setPublishing(true);
     const { data, error } = await window.createMarketplaceListing(userId, newListing);
     setPublishing(false);
     if (!error && data) {
-      onMarketplaceListingsChange(prev => [data, ...prev]);
+      onMarketplaceListingsChange(prev => [data, ...(prev || [])]);
       setTab('mine');
     }
+    return { error };
   };
 
   const handleClose = async (id) => {
-    const { error } = await window.closeMarketplaceListing(id);
+    const { error } = await window.closeMarketplaceListing(id, userId);
     if (!error) {
       onMarketplaceListingsChange(prev => (prev || []).map(l =>
         l.id === id ? { ...l, status: 'closed', updated_at: new Date().toISOString() } : l
@@ -1060,11 +1062,11 @@ function MarketplaceDesktop({ onNav, userData, theme, onToggleTheme, collection 
 
         {/* Tab content */}
         {tab === 'feed' && (
-          <MarketplaceFeed
-            listings={feedListings}
-            onContact={setContact}
-            userId={userId}
-          />
+          marketplaceLoading
+            ? <div style={{ textAlign: 'center', padding: 40, color: SK.textMute, fontSize: 13 }}>Cargando publicaciones...</div>
+            : marketplaceError
+              ? <div style={{ background: SK.surface, border: `1px dashed ${SK.coral}55`, borderRadius: 12, padding: 28, textAlign: 'center', fontSize: 13, color: SK.coral }}>{marketplaceError}</div>
+              : <MarketplaceFeed listings={feedListings} onContact={setContact} userId={userId}/>
         )}
         {tab === 'new' && (
           <MarketplaceNew
