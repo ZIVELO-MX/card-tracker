@@ -311,7 +311,7 @@ function LoginScreen({ onLogin, onRegister, onForgot }) {
             <a href="terms.html" target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: SK.textDim, textDecoration: 'none', letterSpacing: 0.4 }}>Términos</a>
           </div>
           <div style={{ fontSize: 11, color: SK.textDim, letterSpacing: 0.6, textTransform: 'uppercase' }}>By ZIVELO</div>
-          <div style={{ fontSize: 11, color: SK.textDim, marginTop: 3 }}>© 2026 ZIVELO. All rights reserved.</div>
+          <div style={{ fontSize: 11, color: SK.textDim, marginTop: 3 }}>© {new Date().getFullYear()} ZIVELO. All rights reserved.</div>
         </div>
       </div>
     </PhoneShell>
@@ -374,7 +374,12 @@ function RegisterScreen({ onRegister, onLogin }) {
       setErrMsg('No aceptamos emails desechables. Usa un email permanente.');
       return;
     }
-    
+
+    if (pwd.length < 6) {
+      setErrMsg('La contraseña debe tener al menos 6 caracteres.');
+      return;
+    }
+
     const normalizeText = (text) => {
       return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
     };
@@ -803,7 +808,7 @@ function RegisterScreen({ onRegister, onLogin }) {
           </div>
           <div style={{ textAlign: 'center', marginTop: 12 }}>
             <div style={{ fontSize: 11, color: SK.textDim, letterSpacing: 0.6, textTransform: 'uppercase' }}>By ZIVELO</div>
-            <div style={{ fontSize: 11, color: SK.textDim, marginTop: 3 }}>© 2026 ZIVELO. All rights reserved.</div>
+            <div style={{ fontSize: 11, color: SK.textDim, marginTop: 3 }}>© {new Date().getFullYear()} ZIVELO. All rights reserved.</div>
           </div>
         </div>
       </div>

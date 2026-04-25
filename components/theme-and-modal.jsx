@@ -151,7 +151,7 @@ function CmdPalette({ onClose }) {
     // Country search
     for (const c of COUNTRIES) {
       if (c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q)) {
-        items.push({ type: 'country', label: c.name, sub: `Grupo ${c.group} · ${c.have}/${c.total} estampas`, flag: c.flag, code: c.code });
+        items.push({ type: 'country', label: c.name, sub: `Grupo ${c.group} · ${c.total} estampas`, flag: c.flag, code: c.code });
       }
     }
 
@@ -710,18 +710,6 @@ function EditProfileModal({ open, onClose, userData, onSave }) {
                     cursor: 'pointer',
                   }}>{a}</button>
                 ))}
-                <button style={{
-                  width: 40, height: 40, borderRadius: 10,
-                  background: SK.bgSoft,
-                  border: `1px dashed ${SK.border}`,
-                  color: SK.textMute,
-                  cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                  </svg>
-                </button>
               </div>
             </div>
           </div>

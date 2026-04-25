@@ -336,10 +336,10 @@ async function createMarketplaceListing(userId, listing) {
 
 async function closeMarketplaceListing(listingId, userId) {
   if (!window.supabase?.from) return { error: 'Sin conexión' };
-  const query = window.supabase.from('marketplace_listings')
+  let query = window.supabase.from('marketplace_listings')
     .update({ status: 'closed', updated_at: new Date() })
     .eq('id', listingId);
-  if (userId) query.eq('user_id', userId);
+  if (userId) query = query.eq('user_id', userId);
   const { error } = await query;
   if (!error) logActivity('closed', listingId);
   return { error };
@@ -485,7 +485,7 @@ function App() {
   const achievements = computeAchievements(collection, stats);
   const [adminStats, setAdminStats] = React.useState(null);
   const [activityLog, setActivityLog] = React.useState(() => readActivityLog());
-  const [notifications, setNotifications] = React.useState(() => readNotifications());
+  const [notifications, setNotifications] = React.useState([]);
   const prevStatsRef = React.useRef(null);
   const prevCollectionRef = React.useRef(null);
   const prevAchievementsRef = React.useRef(null);

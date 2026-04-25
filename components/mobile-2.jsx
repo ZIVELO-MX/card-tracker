@@ -1534,6 +1534,16 @@ function ProfileScreen({ onNav, stats, achievements = [], userData, onUpdateUser
               cursor: 'pointer',
             }}>Cerrar sesión</button>
           </div>
+
+          {/* Footer legal */}
+          <div style={{ padding: '0 20px 24px', textAlign: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginBottom: 8 }}>
+              <a href="privacy.html" target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: SK.textDim, textDecoration: 'none', letterSpacing: 0.4 }}>Privacidad</a>
+              <a href="terms.html" target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: SK.textDim, textDecoration: 'none', letterSpacing: 0.4 }}>Términos</a>
+            </div>
+            <div style={{ fontSize: 11, color: SK.textDim, letterSpacing: 0.6, textTransform: 'uppercase' }}>By ZIVELO</div>
+            <div style={{ fontSize: 11, color: SK.textDim, marginTop: 3 }}>© {new Date().getFullYear()} ZIVELO. All rights reserved.</div>
+          </div>
         </div>
         )}
       </PhoneShell>
