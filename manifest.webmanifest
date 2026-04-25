@@ -10,15 +10,21 @@
   "theme_color": "#0A1628",
   "icons": [
     {
-      "src": "img/stickio-app-icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "img/stickio-pwa-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "img/stickio-favicon.png",
-      "sizes": "192x192 512x512",
+      "src": "img/stickio-pwa-icon-512.png",
+      "sizes": "192x192",
       "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "img/stickio-app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
       "purpose": "any"
     }
   ]

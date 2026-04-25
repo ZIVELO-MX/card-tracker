@@ -151,7 +151,7 @@ function CmdPalette({ onClose }) {
     // Country search
     for (const c of COUNTRIES) {
       if (c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q)) {
-        items.push({ type: 'country', label: c.name, sub: `Grupo ${c.group} · ${c.have}/${c.total} estampas`, flag: c.flag, code: c.code });
+        items.push({ type: 'country', label: c.name, sub: `Grupo ${c.group} · ${c.total} estampas`, flag: c.flag, code: c.code });
       }
     }
 
@@ -558,6 +558,7 @@ function EditProfileModal({ open, onClose, userData, onSave }) {
   const [avatar, setAvatar] = React.useState('img/avatars/avatar-1.png');
   const [privacy, setPrivacy] = React.useState('public');
   const [notifs, setNotifs] = React.useState(true);
+  const [countryCode, setCountryCode] = React.useState('');
   const [focus, setFocus] = React.useState(null);
   const [saving, setSaving] = React.useState(false);
   const [errorMsg, setErrorMsg] = React.useState('');
@@ -576,10 +577,19 @@ function EditProfileModal({ open, onClose, userData, onSave }) {
     setPhone(userData?.phone || '');
     setWhatsapp(userData?.whatsapp || '');
     setBio(userData?.bio || '');
+    setCountryCode(userData?.country_code || '');
     setErrorMsg('');
     setSaving(false);
     setAvailability({ username: null, phone: null, whatsapp: null });
     setAvatar(userData?.avatar || 'img/avatars/avatar-1.png');
+    // Cargar preferencias guardadas en localStorage
+    if (userData?.id) {
+      try {
+        const saved = JSON.parse(localStorage.getItem(`stickio_settings_${userData.id}`) || '{}');
+        if (saved.privacy) setPrivacy(saved.privacy);
+        if (typeof saved.notifs === 'boolean') setNotifs(saved.notifs);
+      } catch (_) {}
+    }
   }, [open, userData]);
 
   if (!open) return null;
@@ -716,8 +726,8 @@ function EditProfileModal({ open, onClose, userData, onSave }) {
                   position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)',
                   color: SK.textMute, fontFamily: SK.fMono, fontSize: 14, pointerEvents: 'none',
                 }}>@</span>
-                <input
-                  value={username} onChange={e => setUsername(e.target.value.replace(/\s/g, '_').toLowerCase())}
+                 <input
+                   value={username} onChange={e => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_.]/g, ''))}
                   onFocus={() => setFocus('username')} onBlur={() => { setFocus(null); runAvailabilityCheck('username', username); }}
                   style={{ ...inputStyle('username'), paddingLeft: 28, fontFamily: SK.fMono }}
                 />
@@ -732,13 +742,14 @@ function EditProfileModal({ open, onClose, userData, onSave }) {
           <div style={{ marginBottom: 14 }}>
             <label style={labelStyle}>Biografía</label>
             <textarea
-              value={bio} onChange={e => setBio(e.target.value)}
+              value={bio} onChange={e => setBio(e.target.value.slice(0, 160))}
               onFocus={() => setFocus('bio')} onBlur={() => setFocus(null)}
               rows={3}
               style={{ ...inputStyle('bio'), resize: 'vertical', minHeight: 72, fontFamily: SK.fBody, lineHeight: 1.5 }}
             />
             <div style={{
-              fontFamily: SK.fMono, fontSize: 11, color: SK.textDim, marginTop: 4, textAlign: 'right',
+              fontFamily: SK.fMono, fontSize: 11, marginTop: 4, textAlign: 'right',
+              color: bio.length >= 160 ? SK.coral : SK.textDim,
             }}>{bio.length} / 160</div>
           </div>
 
@@ -766,6 +777,29 @@ function EditProfileModal({ open, onClose, userData, onSave }) {
                }}
               />
              </div>
+           </div>
+
+           {/* Country */}
+           <div style={{ marginBottom: 14 }}>
+             <label style={labelStyle}>País (álbum)</label>
+             <select
+               value={countryCode}
+               onChange={e => setCountryCode(e.target.value)}
+               style={{
+                 ...inputStyle('country'),
+                 cursor: 'pointer',
+                 appearance: 'none',
+                 backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`,
+                 backgroundRepeat: 'no-repeat',
+                 backgroundPosition: 'right 12px center',
+                 paddingRight: 34,
+               }}
+             >
+               <option value="">— Sin seleccionar —</option>
+               {(window.COUNTRIES || []).map(c => (
+                 <option key={c.code} value={c.code}>{c.flag} {c.name}</option>
+               ))}
+             </select>
            </div>
 
            {/* Contact numbers */}
@@ -889,7 +923,10 @@ function EditProfileModal({ open, onClose, userData, onSave }) {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           flexShrink: 0,
         }}>
-          <button style={{
+          <button onClick={async () => {
+            if (window.supabase?.auth) await window.supabase.auth.signOut();
+            window.location.reload();
+          }} style={{
             background: 'none', border: 'none',
             color: SK.coral, fontSize: 12, fontWeight: 600,
             cursor: 'pointer', fontFamily: SK.fBody,
@@ -911,22 +948,34 @@ function EditProfileModal({ open, onClose, userData, onSave }) {
                if (!onSave) { onClose(); return; }
                setSaving(true);
                setErrorMsg('');
-               const { error, message } = await onSave({
-                 name,
-                 username,
-                 email,
-                 bio,
-                 location,
-                 phone: normalizedPhone,
-                 whatsapp: normalizedWhatsapp,
-                 avatar,
-               });
-                setSaving(false);
-                if (error) {
-                  setErrorMsg(message || 'No se pudo guardar el perfil.');
-                  return;
-                }
-               onClose();
+               try {
+                 const { error, message } = await onSave({
+                   name,
+                   username,
+                   email,
+                   bio,
+                   location,
+                   phone: normalizedPhone,
+                   whatsapp: normalizedWhatsapp,
+                   country_code: countryCode || null,
+                   avatar,
+                 });
+                 if (error) {
+                   setErrorMsg(message || 'No se pudo guardar el perfil.');
+                   return;
+                 }
+                 // Guardar preferencias locales (privacy/notifs no tienen columna en DB aún)
+                 if (userData?.id) {
+                   try {
+                     localStorage.setItem(`stickio_settings_${userData.id}`, JSON.stringify({ privacy, notifs }));
+                   } catch (_) {}
+                 }
+                 onClose();
+               } catch (err) {
+                 setErrorMsg('Error inesperado. Intenta de nuevo.');
+               } finally {
+                 setSaving(false);
+               }
              }} style={{
                padding: '10px 22px',
                background: canSave ? SK.gold : SK.border, color: canSave ? SK.bg : SK.textMute,

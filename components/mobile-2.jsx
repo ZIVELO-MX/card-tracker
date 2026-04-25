@@ -173,10 +173,10 @@ function AlbumScreen({ onNav, initialCountry = null, collection = {}, setCollect
 
   return (
     <PhoneShell active="album" onNav={onNav}>
-      <div style={{ flex: 1, overflow: 'auto', paddingBottom: 16 }}>
+      <div style={{ flex: 1, overflow: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)' }}>
         {/* Header */}
         <div style={{ padding: '6px 20px 14px' }}>
-          <div style={{ fontSize: 10, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600 }}>colección</div>
+          <div style={{ fontSize: 11, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600 }}>colección</div>
           <div style={{ fontFamily: SK.fHead, fontSize: 28, fontWeight: 700, color: SK.text, marginTop: 2 }}>Mi álbum</div>
         </div>
 
@@ -573,9 +573,9 @@ function MarketplaceScreen({ onNav, userData, collection = {}, marketplaceListin
 
   return (
     <PhoneShell active="marketplace" onNav={onNav}>
-      <div style={{ flex: 1, overflow: 'auto', paddingBottom: 16 }}>
+      <div style={{ flex: 1, overflow: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)' }}>
         <div style={{ padding: '6px 20px 14px' }}>
-          <div style={{ fontSize: 10, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600 }}>marketplace</div>
+          <div style={{ fontSize: 11, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600 }}>marketplace</div>
           <div style={{ fontFamily: SK.fHead, fontSize: 26, fontWeight: 700, color: SK.text, marginTop: 2 }}>Intercambios</div>
         </div>
 
@@ -779,11 +779,11 @@ function MarketplaceScreen({ onNav, userData, collection = {}, marketplaceListin
                 <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
                   <div style={{ flex: 1, background: SK.surface, border: `1px solid ${SK.border}`, borderRadius: 10, padding: '12px 14px' }}>
                     <div style={{ fontFamily: SK.fMono, fontSize: 20, fontWeight: 700, color: SK.green }}>{mine.filter(l => l.status === 'active').length}</div>
-                    <div style={{ fontSize: 10, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600, marginTop: 2 }}>Activas</div>
+                    <div style={{ fontSize: 11, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600, marginTop: 2 }}>Activas</div>
                   </div>
                   <div style={{ flex: 1, background: SK.surface, border: `1px solid ${SK.border}`, borderRadius: 10, padding: '12px 14px' }}>
                     <div style={{ fontFamily: SK.fMono, fontSize: 20, fontWeight: 700, color: SK.textMute }}>{mine.filter(l => l.status === 'closed').length}</div>
-                    <div style={{ fontSize: 10, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600, marginTop: 2 }}>Cerradas</div>
+                    <div style={{ fontSize: 11, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600, marginTop: 2 }}>Cerradas</div>
                   </div>
                 </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12 }}>
@@ -824,10 +824,10 @@ function TradeScreen({ onNav, collection = {}, userData = {}, tradeOffers = [], 
 
   return (
     <PhoneShell active="trade" onNav={onNav}>
-      <div style={{ flex: 1, overflow: 'auto', paddingBottom: 16 }}>
+      <div style={{ flex: 1, overflow: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)' }}>
         {/* Header */}
         <div style={{ padding: '6px 20px 14px' }}>
-          <div style={{ fontSize: 10, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600 }}>intercambio</div>
+          <div style={{ fontSize: 11, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600 }}>intercambio</div>
           <div style={{ fontFamily: SK.fHead, fontSize: 28, fontWeight: 700, color: SK.text, marginTop: 2 }}>Trade</div>
         </div>
 
@@ -1239,11 +1239,11 @@ function ScanTab({ collection = {}, userId = null, onTradeOffersChange = () => {
           <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
             <div style={{ flex: 1, background: SK.bgSoft, border: `1px solid ${SK.border}`, borderRadius: 8, padding: '8px 10px', textAlign: 'center' }}>
               <div style={{ fontFamily: SK.fMono, fontSize: 18, fontWeight: 700, color: SK.green }}>{needFromPartner.length}</div>
-              <div style={{ fontSize: 10, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 0.8 }}>Puedo recibir</div>
+              <div style={{ fontSize: 11, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 0.8 }}>Puedo recibir</div>
             </div>
             <div style={{ flex: 1, background: SK.bgSoft, border: `1px solid ${SK.border}`, borderRadius: 8, padding: '8px 10px', textAlign: 'center' }}>
               <div style={{ fontFamily: SK.fMono, fontSize: 18, fontWeight: 700, color: SK.gold }}>{theyNeedFromMe.length}</div>
-              <div style={{ fontSize: 10, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 0.8 }}>Puedo dar</div>
+              <div style={{ fontSize: 11, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 0.8 }}>Puedo dar</div>
             </div>
           </div>
           <button
@@ -1267,17 +1267,17 @@ function ScanTab({ collection = {}, userId = null, onTradeOffersChange = () => {
               <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
                 <div style={{ flex: 1, background: `${SK.coral}15`, border: `1px solid ${SK.coral}40`, borderRadius: 8, padding: '6px 10px', textAlign: 'center' }}>
                   <div style={{ fontFamily: SK.fMono, fontSize: 16, fontWeight: 800, color: SK.coral }}>−{fromItems.length}</div>
-                  <div style={{ fontSize: 9, color: SK.coral, textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 600 }}>Darás</div>
+                  <div style={{ fontSize: 11, color: SK.coral, textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 600 }}>Darás</div>
                 </div>
                 <div style={{ flex: 1, background: `${SK.green}15`, border: `1px solid ${SK.green}40`, borderRadius: 8, padding: '6px 10px', textAlign: 'center' }}>
                   <div style={{ fontFamily: SK.fMono, fontSize: 16, fontWeight: 800, color: SK.green }}>+{toItems.length}</div>
-                  <div style={{ fontSize: 9, color: SK.green, textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 600 }}>Recibirás</div>
+                  <div style={{ fontSize: 11, color: SK.green, textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 600 }}>Recibirás</div>
                 </div>
                 <div style={{ flex: 1, background: `${SK.gold}15`, border: `1px solid ${SK.gold}40`, borderRadius: 8, padding: '6px 10px', textAlign: 'center' }}>
                   <div style={{ fontFamily: SK.fMono, fontSize: 16, fontWeight: 800, color: toItems.length - fromItems.length >= 0 ? SK.green : SK.coral }}>
                     {toItems.length - fromItems.length > 0 ? '+' : ''}{toItems.length - fromItems.length}
                   </div>
-                  <div style={{ fontSize: 9, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 600 }}>Balance</div>
+                  <div style={{ fontSize: 11, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 600 }}>Balance</div>
                 </div>
               </div>
             </div>
@@ -1287,15 +1287,20 @@ function ScanTab({ collection = {}, userId = null, onTradeOffersChange = () => {
               {/* Ofreces — tus repetidas que le faltan al partner. Si no hay repetidas, muestra todas tus estampas */}
               <div style={{ marginBottom: 14 }}>
                 <div style={{ fontSize: 10, color: SK.coral, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700, marginBottom: 6 }}>
-                  Ofreces ({fromItems.length}/{theyNeedFromMe.length || myDuplicates.length || Object.keys(collection).length} seleccionadas)
+                  Ofreces ({fromItems.length}/{theyNeedFromMe.length || myDuplicates.length} seleccionadas)
                 </div>
-                {theyNeedFromMe.length === 0 && (
+                {theyNeedFromMe.length === 0 && myDuplicates.length > 0 && (
                   <div style={{ fontSize: 11, color: SK.textMute, background: SK.bgSoft, border: `1px solid ${SK.border}`, borderRadius: 10, padding: '10px 12px', marginBottom: 8 }}>
-                    No tienes repetidas que le falten al partner. Puedes ofrecer cualquier estampa.
+                    No tienes repetidas que le falten al partner. Puedes ofrecer tus otras repetidas.
+                  </div>
+                )}
+                {myDuplicates.length === 0 && (
+                  <div style={{ fontSize: 11, color: SK.textMute, background: SK.bgSoft, border: `1px solid ${SK.border}`, borderRadius: 10, padding: '10px 12px', marginBottom: 8 }}>
+                    No tienes estampas repetidas para ofrecer.
                   </div>
                 )}
                 <div style={{ background: SK.bgSoft, border: `1px solid ${SK.border}`, borderRadius: 10, overflow: 'hidden' }}>
-                  {(theyNeedFromMe.length > 0 ? theyNeedFromMe : myDuplicates.length > 0 ? myDuplicates : Object.entries(collection).map(([id, qty]) => ({ id, qty }))).map((d, i, a) => {
+                  {(theyNeedFromMe.length > 0 ? theyNeedFromMe : myDuplicates).map((d, i, a) => {
                     const m = stickerMeta(d.id);
                     const checked = fromItems.includes(d.id);
                     return (
@@ -1365,7 +1370,7 @@ function ScanTab({ collection = {}, userId = null, onTradeOffersChange = () => {
             </div>
 
             {/* Footer buttons */}
-            <div style={{ padding: '10px 16px 20px', borderTop: `1px solid ${SK.border}`, flexShrink: 0, display: 'flex', gap: 8 }}>
+            <div style={{ padding: `10px 16px calc(env(safe-area-inset-bottom, 0px) + 20px)`, borderTop: `1px solid ${SK.border}`, flexShrink: 0, display: 'flex', gap: 8 }}>
               <button onClick={() => setModalOpen(false)} style={{
                 flex: 1, background: 'transparent', border: `1px solid ${SK.border}`,
                 borderRadius: 10, padding: '12px 0', color: SK.text,
@@ -1482,7 +1487,13 @@ function ProfileScreen({ onNav, stats, achievements = [], userData, onUpdateUser
   return (
     <>
       <PhoneShell active="profile" onNav={onNav}>
-        <div style={{ flex: 1, overflow: 'auto', paddingBottom: 16 }}>
+        {!userData ? (
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, color: SK.textMute, fontSize: 13 }}>
+            <LoadingSpinner size={18}/>
+            Cargando perfil...
+          </div>
+        ) : (
+        <div style={{ flex: 1, overflow: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)' }}>
           {/* Header */}
           <div style={{ padding: '20px 20px 20px', textAlign: 'center' }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
@@ -1505,7 +1516,7 @@ function ProfileScreen({ onNav, stats, achievements = [], userData, onUpdateUser
 
         {/* Achievements */}
         <div style={{ padding: '0 20px 20px' }}>
-          <div style={{ fontSize: 10, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600 }}>logros</div>
+          <div style={{ fontSize: 11, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600 }}>logros</div>
           <div style={{ fontFamily: SK.fHead, fontSize: 20, fontWeight: 700, color: SK.text, marginTop: 2, marginBottom: 12 }}>Insignias</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
             {(achievements.length ? achievements : [
@@ -1525,7 +1536,7 @@ function ProfileScreen({ onNav, stats, achievements = [], userData, onUpdateUser
 
           {/* Recently marked stickers */}
           <div style={{ padding: '0 20px 20px' }}>
-            <div style={{ fontSize: 10, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600 }}>recientes</div>
+            <div style={{ fontSize: 11, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600 }}>recientes</div>
             <div style={{ fontFamily: SK.fHead, fontSize: 20, fontWeight: 700, color: SK.text, marginTop: 2, marginBottom: 12 }}>Últimas marcadas</div>
             {recentStickerItems.length === 0 ? (
               <div style={{ background: SK.surface, border: `1px solid ${SK.border}`, borderRadius: 12 }}>
@@ -1593,7 +1604,18 @@ function ProfileScreen({ onNav, stats, achievements = [], userData, onUpdateUser
               cursor: 'pointer',
             }}>Cerrar sesión</button>
           </div>
+
+          {/* Footer legal */}
+          <div style={{ padding: '0 20px 24px', textAlign: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginBottom: 8 }}>
+              <a href="privacy.html" target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: SK.textDim, textDecoration: 'none', letterSpacing: 0.4 }}>Privacidad</a>
+              <a href="terms.html" target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: SK.textDim, textDecoration: 'none', letterSpacing: 0.4 }}>Términos</a>
+            </div>
+            <div style={{ fontSize: 11, color: SK.textDim, letterSpacing: 0.6, textTransform: 'uppercase' }}>By ZIVELO</div>
+            <div style={{ fontSize: 11, color: SK.textDim, marginTop: 3 }}>© {new Date().getFullYear()} ZIVELO. All rights reserved.</div>
+          </div>
         </div>
+        )}
       </PhoneShell>
       {editOpen && (
         <div style={{
@@ -1629,7 +1651,7 @@ function ProfileScreen({ onNav, stats, achievements = [], userData, onUpdateUser
               />
               <input
                 value={form.username}
-                onChange={e => setForm(prev => ({ ...prev, username: e.target.value.replace(/\s/g, '_').toLowerCase() }))}
+                onChange={e => setForm(prev => ({ ...prev, username: e.target.value.toLowerCase().replace(/[^a-z0-9_.]/g, '') }))}
                 onBlur={() => runAvailabilityCheck('username', form.username)}
                 placeholder="Username"
                 style={{
@@ -1713,7 +1735,7 @@ function ProfileScreen({ onNav, stats, achievements = [], userData, onUpdateUser
               )}
               <textarea
                 value={form.bio}
-                onChange={e => setForm(prev => ({ ...prev, bio: e.target.value }))}
+                onChange={e => setForm(prev => ({ ...prev, bio: e.target.value.slice(0, 160) }))}
                 placeholder="Bio"
                 rows={3}
                 style={{
@@ -1725,6 +1747,7 @@ function ProfileScreen({ onNav, stats, achievements = [], userData, onUpdateUser
                   resize: 'vertical',
                 }}
               />
+              <div style={{ fontSize: 11, textAlign: 'right', color: form.bio.length >= 160 ? SK.coral : SK.textDim }}>{form.bio.length}/160</div>
               {errorMsg && <div style={{ fontSize: 11, color: SK.coral }}>{errorMsg}</div>}
             </div>
             <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
@@ -1739,22 +1762,27 @@ function ProfileScreen({ onNav, stats, achievements = [], userData, onUpdateUser
                 if (!onUpdateUser) { setEditOpen(false); return; }
                 setSaving(true);
                 setErrorMsg('');
-                const { error, message } = await onUpdateUser({
-                  ...userData,
-                  name: form.name,
-                  username: form.username,
-                  email: form.email,
-                  bio: form.bio,
-                  location: form.location,
-                  phone: window.normalizeIntlPhone ? window.normalizeIntlPhone(form.phone) : form.phone,
-                  whatsapp: window.normalizeIntlPhone ? window.normalizeIntlPhone(form.whatsapp) : form.whatsapp,
-                });
-                setSaving(false);
-                if (error) {
-                  setErrorMsg(message || 'No se pudo guardar el perfil.');
-                  return;
+                try {
+                  const { error, message } = await onUpdateUser({
+                    ...userData,
+                    name: form.name,
+                    username: form.username,
+                    email: form.email,
+                    bio: form.bio,
+                    location: form.location,
+                    phone: window.normalizeIntlPhone ? window.normalizeIntlPhone(form.phone) : form.phone,
+                    whatsapp: window.normalizeIntlPhone ? window.normalizeIntlPhone(form.whatsapp) : form.whatsapp,
+                  });
+                  if (error) {
+                    setErrorMsg(message || 'No se pudo guardar el perfil.');
+                    return;
+                  }
+                  setEditOpen(false);
+                } catch (err) {
+                  setErrorMsg('Error inesperado. Intenta de nuevo.');
+                } finally {
+                  setSaving(false);
                 }
-                setEditOpen(false);
               }} style={{
                 flex: 1, padding: '10px 0',
                 background: canSave ? SK.gold : SK.border, color: canSave ? SK.bg : SK.textMute,
