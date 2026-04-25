@@ -286,10 +286,10 @@ function CmdPalette({ onClose }) {
                   width: 38, height: 38, borderRadius: 9, flexShrink: 0,
                   background: SK.bgSoft, border: `1px solid ${SK.border}`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontFamily: SK.fMono, fontSize: r.type === 'country' ? 20 : 11,
+                  fontFamily: SK.fMono, fontSize: 11,
                   color: SK.gold, fontWeight: 700,
                 }}>
-                  {r.type === 'country' ? r.flag : r.type === 'sticker' ? `#${r.num}` : '★'}
+                  {r.type === 'country' ? <FlagImg code={r.code} size={22} /> : r.type === 'sticker' ? `#${r.num}` : '★'}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontFamily: SK.fHead, fontSize: 14, fontWeight: 700, color: SK.text }}>{r.label}</div>
@@ -485,12 +485,7 @@ function DesktopTopbarV2({ title, sub, theme, onToggleTheme, userData }) {
             cursor: 'pointer',
             transition: 'background 0.15s, border-color 0.15s',
           }}>
-            <div style={{
-              width: 28, height: 28, borderRadius: 14,
-              background: SK.gold, color: theme === 'dark' ? SK.bg : '#fff',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontFamily: SK.fHead, fontSize: 12, fontWeight: 700,
-            }}>{initials}</div>
+            <AvatarBubble userData={userData} size={28} />
             <span style={{ fontSize: 13, fontWeight: 500, color: SK.text }}>{firstName}</span>
           </div>
           {hovUser && (
@@ -560,7 +555,7 @@ function EditProfileModal({ open, onClose, userData, onSave }) {
   const [email, setEmail] = React.useState('');
   const [phone, setPhone] = React.useState('');
   const [whatsapp, setWhatsapp] = React.useState('');
-  const [avatar, setAvatar] = React.useState('AM');
+  const [avatar, setAvatar] = React.useState('img/avatars/avatar-1.png');
   const [privacy, setPrivacy] = React.useState('public');
   const [notifs, setNotifs] = React.useState(true);
   const [countryCode, setCountryCode] = React.useState('');
@@ -569,7 +564,7 @@ function EditProfileModal({ open, onClose, userData, onSave }) {
   const [errorMsg, setErrorMsg] = React.useState('');
   const [availability, setAvailability] = React.useState({ username: null, phone: null, whatsapp: null });
 
-  const avatarOptions = ['AM', 'A!', 'AX', '⚽', '★', '♦'];
+  const avatarOptions = ['img/avatars/avatar-1.png', 'img/avatars/avatar-2.png', 'img/avatars/avatar-3.png'];
 
   React.useEffect(() => {
     if (!open) return;
@@ -586,8 +581,7 @@ function EditProfileModal({ open, onClose, userData, onSave }) {
     setErrorMsg('');
     setSaving(false);
     setAvailability({ username: null, phone: null, whatsapp: null });
-    const initials = nameVal.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-    setAvatar(initials || 'AM');
+    setAvatar(userData?.avatar || 'img/avatars/avatar-1.png');
     // Cargar preferencias guardadas en localStorage
     if (userData?.id) {
       try {
@@ -691,24 +685,25 @@ function EditProfileModal({ open, onClose, userData, onSave }) {
             <div style={{
               width: 80, height: 80, borderRadius: 40,
               border: `2px solid ${SK.gold}`,
-              background: SK.bgSoft,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontFamily: SK.fHead, fontSize: 30, fontWeight: 700,
-              color: SK.gold, flexShrink: 0,
+              background: SK.bgSoft, flexShrink: 0,
               boxShadow: `0 4px 16px -4px ${SK.goldDeep}`,
-            }}>{avatar}</div>
+              overflow: 'hidden',
+            }}>
+              <img src={avatar} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} alt="" />
+            </div>
             <div style={{ flex: 1 }}>
               <div style={{ ...labelStyle }}>Avatar</div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {avatarOptions.map(a => (
                   <button key={a} onClick={() => setAvatar(a)} style={{
-                    width: 40, height: 40, borderRadius: 10,
-                    background: avatar === a ? `${SK.gold}22` : SK.bgSoft,
-                    border: `1px solid ${avatar === a ? SK.gold : SK.border}`,
-                    color: avatar === a ? SK.gold : SK.textMute,
-                    fontFamily: SK.fHead, fontSize: 15, fontWeight: 700,
-                    cursor: 'pointer',
-                  }}>{a}</button>
+                    width: 48, height: 48, borderRadius: 10, padding: 0,
+                    background: 'none',
+                    border: `2px solid ${avatar === a ? SK.gold : SK.border}`,
+                    cursor: 'pointer', overflow: 'hidden',
+                    boxShadow: avatar === a ? `0 0 0 3px ${SK.gold}33` : 'none',
+                  }}>
+                    <img src={a} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} alt="" />
+                  </button>
                 ))}
               </div>
             </div>
@@ -963,6 +958,7 @@ function EditProfileModal({ open, onClose, userData, onSave }) {
                    phone: normalizedPhone,
                    whatsapp: normalizedWhatsapp,
                    country_code: countryCode || null,
+                   avatar,
                  });
                  if (error) {
                    setErrorMsg(message || 'No se pudo guardar el perfil.');
