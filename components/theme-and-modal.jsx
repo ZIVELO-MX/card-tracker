@@ -151,7 +151,7 @@ function CmdPalette({ onClose }) {
     // Country search
     for (const c of COUNTRIES) {
       if (c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q)) {
-        items.push({ type: 'country', label: c.name, sub: `Grupo ${c.group} · ${c.have}/${c.total} estampas`, flag: c.flag, code: c.code });
+        items.push({ type: 'country', label: c.name, sub: `Grupo ${c.group} · ${c.total} estampas`, flag: c.flag, code: c.code });
       }
     }
 
@@ -286,10 +286,10 @@ function CmdPalette({ onClose }) {
                   width: 38, height: 38, borderRadius: 9, flexShrink: 0,
                   background: SK.bgSoft, border: `1px solid ${SK.border}`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontFamily: SK.fMono, fontSize: r.type === 'country' ? 20 : 11,
+                  fontFamily: SK.fMono, fontSize: 11,
                   color: SK.gold, fontWeight: 700,
                 }}>
-                  {r.type === 'country' ? r.flag : r.type === 'sticker' ? `#${r.num}` : '★'}
+                  {r.type === 'country' ? <FlagImg code={r.code} size={22} /> : r.type === 'sticker' ? `#${r.num}` : '★'}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontFamily: SK.fHead, fontSize: 14, fontWeight: 700, color: SK.text }}>{r.label}</div>
@@ -485,12 +485,7 @@ function DesktopTopbarV2({ title, sub, theme, onToggleTheme, userData }) {
             cursor: 'pointer',
             transition: 'background 0.15s, border-color 0.15s',
           }}>
-            <div style={{
-              width: 28, height: 28, borderRadius: 14,
-              background: SK.gold, color: theme === 'dark' ? SK.bg : '#fff',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontFamily: SK.fHead, fontSize: 12, fontWeight: 700,
-            }}>{initials}</div>
+            <AvatarBubble userData={userData} size={28} />
             <span style={{ fontSize: 13, fontWeight: 500, color: SK.text }}>{firstName}</span>
           </div>
           {hovUser && (
@@ -560,15 +555,16 @@ function EditProfileModal({ open, onClose, userData, onSave }) {
   const [email, setEmail] = React.useState('');
   const [phone, setPhone] = React.useState('');
   const [whatsapp, setWhatsapp] = React.useState('');
-  const [avatar, setAvatar] = React.useState('AM');
+  const [avatar, setAvatar] = React.useState('img/avatars/avatar-1.png');
   const [privacy, setPrivacy] = React.useState('public');
   const [notifs, setNotifs] = React.useState(true);
+  const [countryCode, setCountryCode] = React.useState('');
   const [focus, setFocus] = React.useState(null);
   const [saving, setSaving] = React.useState(false);
   const [errorMsg, setErrorMsg] = React.useState('');
   const [availability, setAvailability] = React.useState({ username: null, phone: null, whatsapp: null });
 
-  const avatarOptions = ['AM', 'A!', 'AX', '⚽', '★', '♦'];
+  const avatarOptions = ['img/avatars/avatar-1.png', 'img/avatars/avatar-2.png', 'img/avatars/avatar-3.png'];
 
   React.useEffect(() => {
     if (!open) return;
@@ -581,11 +577,19 @@ function EditProfileModal({ open, onClose, userData, onSave }) {
     setPhone(userData?.phone || '');
     setWhatsapp(userData?.whatsapp || '');
     setBio(userData?.bio || '');
+    setCountryCode(userData?.country_code || '');
     setErrorMsg('');
     setSaving(false);
     setAvailability({ username: null, phone: null, whatsapp: null });
-    const initials = nameVal.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-    setAvatar(initials || 'AM');
+    setAvatar(userData?.avatar || 'img/avatars/avatar-1.png');
+    // Cargar preferencias guardadas en localStorage
+    if (userData?.id) {
+      try {
+        const saved = JSON.parse(localStorage.getItem(`stickio_settings_${userData.id}`) || '{}');
+        if (saved.privacy) setPrivacy(saved.privacy);
+        if (typeof saved.notifs === 'boolean') setNotifs(saved.notifs);
+      } catch (_) {}
+    }
   }, [open, userData]);
 
   if (!open) return null;
@@ -681,37 +685,26 @@ function EditProfileModal({ open, onClose, userData, onSave }) {
             <div style={{
               width: 80, height: 80, borderRadius: 40,
               border: `2px solid ${SK.gold}`,
-              background: SK.bgSoft,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontFamily: SK.fHead, fontSize: 30, fontWeight: 700,
-              color: SK.gold, flexShrink: 0,
+              background: SK.bgSoft, flexShrink: 0,
               boxShadow: `0 4px 16px -4px ${SK.goldDeep}`,
-            }}>{avatar}</div>
+              overflow: 'hidden',
+            }}>
+              <img src={avatar} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} alt="" />
+            </div>
             <div style={{ flex: 1 }}>
               <div style={{ ...labelStyle }}>Avatar</div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {avatarOptions.map(a => (
                   <button key={a} onClick={() => setAvatar(a)} style={{
-                    width: 40, height: 40, borderRadius: 10,
-                    background: avatar === a ? `${SK.gold}22` : SK.bgSoft,
-                    border: `1px solid ${avatar === a ? SK.gold : SK.border}`,
-                    color: avatar === a ? SK.gold : SK.textMute,
-                    fontFamily: SK.fHead, fontSize: 15, fontWeight: 700,
-                    cursor: 'pointer',
-                  }}>{a}</button>
+                    width: 48, height: 48, borderRadius: 10, padding: 0,
+                    background: 'none',
+                    border: `2px solid ${avatar === a ? SK.gold : SK.border}`,
+                    cursor: 'pointer', overflow: 'hidden',
+                    boxShadow: avatar === a ? `0 0 0 3px ${SK.gold}33` : 'none',
+                  }}>
+                    <img src={a} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} alt="" />
+                  </button>
                 ))}
-                <button style={{
-                  width: 40, height: 40, borderRadius: 10,
-                  background: SK.bgSoft,
-                  border: `1px dashed ${SK.border}`,
-                  color: SK.textMute,
-                  cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                  </svg>
-                </button>
               </div>
             </div>
           </div>
@@ -733,8 +726,8 @@ function EditProfileModal({ open, onClose, userData, onSave }) {
                   position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)',
                   color: SK.textMute, fontFamily: SK.fMono, fontSize: 14, pointerEvents: 'none',
                 }}>@</span>
-                <input
-                  value={username} onChange={e => setUsername(e.target.value.replace(/\s/g, '_').toLowerCase())}
+                 <input
+                   value={username} onChange={e => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_.]/g, ''))}
                   onFocus={() => setFocus('username')} onBlur={() => { setFocus(null); runAvailabilityCheck('username', username); }}
                   style={{ ...inputStyle('username'), paddingLeft: 28, fontFamily: SK.fMono }}
                 />
@@ -749,13 +742,14 @@ function EditProfileModal({ open, onClose, userData, onSave }) {
           <div style={{ marginBottom: 14 }}>
             <label style={labelStyle}>Biografía</label>
             <textarea
-              value={bio} onChange={e => setBio(e.target.value)}
+              value={bio} onChange={e => setBio(e.target.value.slice(0, 160))}
               onFocus={() => setFocus('bio')} onBlur={() => setFocus(null)}
               rows={3}
               style={{ ...inputStyle('bio'), resize: 'vertical', minHeight: 72, fontFamily: SK.fBody, lineHeight: 1.5 }}
             />
             <div style={{
-              fontFamily: SK.fMono, fontSize: 11, color: SK.textDim, marginTop: 4, textAlign: 'right',
+              fontFamily: SK.fMono, fontSize: 11, marginTop: 4, textAlign: 'right',
+              color: bio.length >= 160 ? SK.coral : SK.textDim,
             }}>{bio.length} / 160</div>
           </div>
 
@@ -783,6 +777,29 @@ function EditProfileModal({ open, onClose, userData, onSave }) {
                }}
               />
              </div>
+           </div>
+
+           {/* Country */}
+           <div style={{ marginBottom: 14 }}>
+             <label style={labelStyle}>País (álbum)</label>
+             <select
+               value={countryCode}
+               onChange={e => setCountryCode(e.target.value)}
+               style={{
+                 ...inputStyle('country'),
+                 cursor: 'pointer',
+                 appearance: 'none',
+                 backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`,
+                 backgroundRepeat: 'no-repeat',
+                 backgroundPosition: 'right 12px center',
+                 paddingRight: 34,
+               }}
+             >
+               <option value="">— Sin seleccionar —</option>
+               {(window.COUNTRIES || []).map(c => (
+                 <option key={c.code} value={c.code}>{c.flag} {c.name}</option>
+               ))}
+             </select>
            </div>
 
            {/* Contact numbers */}
@@ -906,7 +923,10 @@ function EditProfileModal({ open, onClose, userData, onSave }) {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           flexShrink: 0,
         }}>
-          <button style={{
+          <button onClick={async () => {
+            if (window.supabase?.auth) await window.supabase.auth.signOut();
+            window.location.reload();
+          }} style={{
             background: 'none', border: 'none',
             color: SK.coral, fontSize: 12, fontWeight: 600,
             cursor: 'pointer', fontFamily: SK.fBody,
@@ -928,21 +948,34 @@ function EditProfileModal({ open, onClose, userData, onSave }) {
                if (!onSave) { onClose(); return; }
                setSaving(true);
                setErrorMsg('');
-               const { error, message } = await onSave({
-                 name,
-                 username,
-                 email,
-                 bio,
-                 location,
-                 phone: normalizedPhone,
-                 whatsapp: normalizedWhatsapp,
-               });
-                setSaving(false);
-                if (error) {
-                  setErrorMsg(message || 'No se pudo guardar el perfil.');
-                  return;
-                }
-               onClose();
+               try {
+                 const { error, message } = await onSave({
+                   name,
+                   username,
+                   email,
+                   bio,
+                   location,
+                   phone: normalizedPhone,
+                   whatsapp: normalizedWhatsapp,
+                   country_code: countryCode || null,
+                   avatar,
+                 });
+                 if (error) {
+                   setErrorMsg(message || 'No se pudo guardar el perfil.');
+                   return;
+                 }
+                 // Guardar preferencias locales (privacy/notifs no tienen columna en DB aún)
+                 if (userData?.id) {
+                   try {
+                     localStorage.setItem(`stickio_settings_${userData.id}`, JSON.stringify({ privacy, notifs }));
+                   } catch (_) {}
+                 }
+                 onClose();
+               } catch (err) {
+                 setErrorMsg('Error inesperado. Intenta de nuevo.');
+               } finally {
+                 setSaving(false);
+               }
              }} style={{
                padding: '10px 22px',
                background: canSave ? SK.gold : SK.border, color: canSave ? SK.bg : SK.textMute,

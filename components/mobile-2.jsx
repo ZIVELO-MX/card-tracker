@@ -173,10 +173,10 @@ function AlbumScreen({ onNav, initialCountry = null, collection = {}, setCollect
 
   return (
     <PhoneShell active="album" onNav={onNav}>
-      <div style={{ flex: 1, overflow: 'auto', paddingBottom: 16 }}>
+      <div style={{ flex: 1, overflow: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)' }}>
         {/* Header */}
         <div style={{ padding: '6px 20px 14px' }}>
-          <div style={{ fontSize: 10, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600 }}>colección</div>
+          <div style={{ fontSize: 11, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600 }}>colección</div>
           <div style={{ fontFamily: SK.fHead, fontSize: 28, fontWeight: 700, color: SK.text, marginTop: 2 }}>Mi álbum</div>
         </div>
 
@@ -263,7 +263,7 @@ function AlbumScreen({ onNav, initialCountry = null, collection = {}, setCollect
                   background: `${SK.gold}22`, border: `1px solid ${SK.gold}55`,
                   borderRadius: 20, padding: '5px 12px', marginBottom: 10,
                 }}>
-                  <span style={{ fontSize: 16 }}>{c.flag}</span>
+                  <FlagImg code={c.code} size={16} />
                   <span style={{ fontFamily: SK.fBody, fontSize: 12, fontWeight: 700, color: SK.gold, textTransform: 'uppercase', letterSpacing: 0.5 }}>{c.name}</span>
                   <button onClick={() => setSelectedCountry(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: SK.gold, fontSize: 14, lineHeight: 1, padding: 0, marginLeft: 2 }}>×</button>
                 </div>
@@ -287,7 +287,7 @@ function AlbumScreen({ onNav, initialCountry = null, collection = {}, setCollect
                       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
                       cursor: 'pointer',
                     }}>
-                      <span style={{ fontSize: 22 }}>{c.flag}</span>
+                      <FlagImg code={c.code} size={22} />
                       <span style={{
                         fontFamily: SK.fBody, fontSize: 9, fontWeight: 600, color: SK.textMute,
                         textTransform: 'uppercase', letterSpacing: 0.3,
@@ -315,6 +315,7 @@ function AlbumScreen({ onNav, initialCountry = null, collection = {}, setCollect
           });
           const haveCount = merged.reduce((acc, s) => acc + (s.count > 0 ? 1 : 0), 0);
           const totalCount = sec.country?.total || sec.total || merged.length;
+          const headerCode = sec.country?.code || null;
           const headerFlag = sec.country?.flag || sec.flag;
           const headerTitle = sec.country?.name || sec.label || 'Especiales';
           if (!filtered.length) return null;
@@ -326,7 +327,9 @@ function AlbumScreen({ onNav, initialCountry = null, collection = {}, setCollect
                 borderRadius: 12, padding: 14, marginBottom: 12,
                 display: 'flex', alignItems: 'center', gap: 12,
               }}>
-                <div style={{ fontSize: 32 }}>{headerFlag}</div>
+                <div style={{ fontSize: 32, lineHeight: 1 }}>
+                  {headerCode ? <FlagImg code={headerCode} size={32} /> : headerFlag}
+                </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontFamily: SK.fHead, fontSize: 18, fontWeight: 700, color: SK.text, textTransform: 'uppercase' }}>
                     {headerTitle}
@@ -570,9 +573,9 @@ function MarketplaceScreen({ onNav, userData, collection = {}, marketplaceListin
 
   return (
     <PhoneShell active="marketplace" onNav={onNav}>
-      <div style={{ flex: 1, overflow: 'auto', paddingBottom: 16 }}>
+      <div style={{ flex: 1, overflow: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)' }}>
         <div style={{ padding: '6px 20px 14px' }}>
-          <div style={{ fontSize: 10, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600 }}>marketplace</div>
+          <div style={{ fontSize: 11, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600 }}>marketplace</div>
           <div style={{ fontFamily: SK.fHead, fontSize: 26, fontWeight: 700, color: SK.text, marginTop: 2 }}>Intercambios</div>
         </div>
 
@@ -776,11 +779,11 @@ function MarketplaceScreen({ onNav, userData, collection = {}, marketplaceListin
                 <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
                   <div style={{ flex: 1, background: SK.surface, border: `1px solid ${SK.border}`, borderRadius: 10, padding: '12px 14px' }}>
                     <div style={{ fontFamily: SK.fMono, fontSize: 20, fontWeight: 700, color: SK.green }}>{mine.filter(l => l.status === 'active').length}</div>
-                    <div style={{ fontSize: 10, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600, marginTop: 2 }}>Activas</div>
+                    <div style={{ fontSize: 11, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600, marginTop: 2 }}>Activas</div>
                   </div>
                   <div style={{ flex: 1, background: SK.surface, border: `1px solid ${SK.border}`, borderRadius: 10, padding: '12px 14px' }}>
                     <div style={{ fontFamily: SK.fMono, fontSize: 20, fontWeight: 700, color: SK.textMute }}>{mine.filter(l => l.status === 'closed').length}</div>
-                    <div style={{ fontSize: 10, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600, marginTop: 2 }}>Cerradas</div>
+                    <div style={{ fontSize: 11, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600, marginTop: 2 }}>Cerradas</div>
                   </div>
                 </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12 }}>
@@ -815,16 +818,16 @@ function MarketplaceScreen({ onNav, userData, collection = {}, marketplaceListin
 // ─────────────────────────────────────────────────────────────
 // SCREEN 4 — Trade
 // ─────────────────────────────────────────────────────────────
-function TradeScreen({ onNav, collection = {}, userData = {}, tradeOffers = [], onTradeOffersChange = () => {}, userId = null }) {
+function TradeScreen({ onNav, collection = {}, userData = {}, tradeOffers = [], onTradeOffersChange = () => {}, userId = null, tradeUser = null, onTradeUserConsumed = () => {} }) {
   const [tab, setTab] = React.useState('scan');
   const pendingCount = tradeOffers.filter(o => o.to_user === userId && o.status === 'pending').length;
 
   return (
     <PhoneShell active="trade" onNav={onNav}>
-      <div style={{ flex: 1, overflow: 'auto', paddingBottom: 16 }}>
+      <div style={{ flex: 1, overflow: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)' }}>
         {/* Header */}
         <div style={{ padding: '6px 20px 14px' }}>
-          <div style={{ fontSize: 10, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600 }}>intercambio</div>
+          <div style={{ fontSize: 11, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600 }}>intercambio</div>
           <div style={{ fontFamily: SK.fHead, fontSize: 28, fontWeight: 700, color: SK.text, marginTop: 2 }}>Trade</div>
         </div>
 
@@ -861,7 +864,7 @@ function TradeScreen({ onNav, collection = {}, userData = {}, tradeOffers = [], 
           </div>
         </div>
 
-        {tab === 'scan'    && <ScanTab collection={collection} userId={userId} onTradeOffersChange={onTradeOffersChange}/>} 
+        {tab === 'scan'    && <ScanTab collection={collection} userId={userId} onTradeOffersChange={onTradeOffersChange} tradeOffers={tradeOffers} tradeUser={tradeUser} onTradeUserConsumed={onTradeUserConsumed}/>} 
         {tab === 'history' && <TradeHistoryMobile tradeOffers={tradeOffers} userId={userId} onTradeOffersChange={onTradeOffersChange}/>} 
       </div>
     </PhoneShell>
@@ -1053,8 +1056,8 @@ function stickerMeta(id) {
   return { flag: '⭐', id, pos: '', name: '' };
 }
 
-function ScanTab({ collection = {}, userId = null, onTradeOffersChange = () => {} }) {
-  const [query, setQuery] = React.useState('');
+function ScanTab({ collection = {}, userId = null, onTradeOffersChange = () => {}, tradeOffers = [], tradeUser = null, onTradeUserConsumed = () => {} }) {
+  const [query, setQuery] = React.useState(tradeUser ? `@${tradeUser}` : '');
   const [loading, setLoading] = React.useState(false);
   const [partner, setPartner] = React.useState(null);
   const [error, setError] = React.useState(null);
@@ -1062,30 +1065,34 @@ function ScanTab({ collection = {}, userId = null, onTradeOffersChange = () => {
   const [fromItems, setFromItems] = React.useState([]);
   const [toItems, setToItems] = React.useState([]);
   const [submitting, setSubmitting] = React.useState(false);
+  const [recentPartners, setRecentPartners] = React.useState([]);
 
   const cleanQuery = query.replace(/^@/, '').replace(/[^a-z0-9_.]/gi, '').toLowerCase().slice(0, 30);
   const canSearch = cleanQuery.length >= 2 && !loading;
 
-  const myDuplicates = React.useMemo(() =>
-    Object.entries(collection).filter(([, qty]) => qty >= 2).map(([id, qty]) => ({ id, qty })),
-    [collection]
-  );
+  // Calcular últimos 5 partners con trades aceptados
+  React.useEffect(() => {
+    if (!userId || !window.supabase?.from) return;
+    const accepted = (tradeOffers || [])
+      .filter(o => o.status === 'accepted' && (o.from_user === userId || o.to_user === userId))
+      .sort((a, b) => new Date(b.updated_at || b.created_at || 0) - new Date(a.updated_at || a.created_at || 0));
+    const seen = new Set();
+    const partnerIds = [];
+    for (const o of accepted) {
+      const pid = o.from_user === userId ? o.to_user : o.from_user;
+      if (pid && !seen.has(pid)) { seen.add(pid); partnerIds.push(pid); }
+      if (partnerIds.length >= 5) break;
+    }
+    if (partnerIds.length === 0) { setRecentPartners([]); return; }
+    window.supabase.from('profiles').select('id, username, display_name').in('id', partnerIds)
+      .then(({ data }) => {
+        if (!data) return;
+        const byId = Object.fromEntries(data.map(p => [p.id, p]));
+        setRecentPartners(partnerIds.map(id => byId[id]).filter(Boolean));
+      });
+  }, [tradeOffers, userId]);
 
-  // Estampas que el partner tiene y yo NO tengo (no solo sus repetidas)
-  const needFromPartner = React.useMemo(() => {
-    if (!partner) return [];
-    return Object.entries(partner.collectionMap || {})
-      .filter(([id]) => (collection[id] || 0) === 0)
-      .map(([id, qty]) => ({ id, qty }));
-  }, [partner, collection]);
-
-  // Mis repetidas que el partner NO tiene
-  const theyNeedFromMe = React.useMemo(() => {
-    if (!partner) return [];
-    return myDuplicates.filter(d => (partner.collectionMap?.[d.id] || 0) === 0);
-  }, [myDuplicates, partner]);
-
-   async function handleUsernameSearch(raw = cleanQuery) {
+  async function handleUsernameSearch(raw = cleanQuery) {
     const clean = (raw || '').replace(/^@/, '').replace(/[^a-z0-9_.]/gi, '').toLowerCase().slice(0, 30);
     if (!clean || !window.supabase?.from) return;
     setLoading(true);
@@ -1124,6 +1131,28 @@ function ScanTab({ collection = {}, userId = null, onTradeOffersChange = () => {
     }
   }
 
+  const myDuplicates = React.useMemo(() =>
+    Object.entries(collection).filter(([, qty]) => qty >= 2).map(([id, qty]) => ({ id, qty })),
+    [collection]
+  );
+  const needFromPartner = React.useMemo(() => {
+    if (!partner) return [];
+    return Object.entries(partner.collectionMap || {})
+      .filter(([id]) => (collection[id] || 0) === 0)
+      .map(([id, qty]) => ({ id, qty }));
+  }, [partner, collection]);
+  const theyNeedFromMe = React.useMemo(() => {
+    if (!partner) return [];
+    return myDuplicates.filter(d => (partner.collectionMap?.[d.id] || 0) === 0);
+  }, [myDuplicates, partner]);
+
+  // Auto-buscar cuando viene usuario desde deep link
+  React.useEffect(() => {
+    if (!tradeUser) return;
+    onTradeUserConsumed();
+    handleUsernameSearch(tradeUser);
+  }, [tradeUser]);
+
   const togglePick = (setList, id) => setList(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
 
   async function handlePropose() {
@@ -1148,6 +1177,38 @@ function ScanTab({ collection = {}, userId = null, onTradeOffersChange = () => {
 
   return (
     <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+      {/* Accesos rápidos: últimos trades */}
+      {recentPartners.length > 0 && (
+        <div>
+          <div style={{ fontSize: 10, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600, marginBottom: 8 }}>Trades recientes</div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {recentPartners.map(p => (
+              <button
+                key={p.id}
+                onClick={() => { setQuery(`@${p.username}`); handleUsernameSearch(p.username); }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '6px 12px',
+                  background: SK.surface, border: `1px solid ${SK.border}`,
+                  borderRadius: 20, cursor: 'pointer',
+                  fontFamily: SK.fMono, fontSize: 12, color: SK.text,
+                }}
+              >
+                <div style={{
+                  width: 20, height: 20, borderRadius: '50%',
+                  background: SK.gold, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 10, fontWeight: 700, color: SK.bg, flexShrink: 0, fontFamily: SK.fHead,
+                }}>
+                  {(p.username || '?')[0].toUpperCase()}
+                </div>
+                <span>@{p.username}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div style={{ background: SK.surface, border: `1px solid ${SK.border}`, borderRadius: 12, padding: 14 }}>
         <div style={{ fontSize: 12, color: SK.textMute, marginBottom: 8 }}>Busca por @usuario para iniciar un intercambio:</div>
         <div style={{ display: 'flex', gap: 8 }}>
@@ -1178,11 +1239,11 @@ function ScanTab({ collection = {}, userId = null, onTradeOffersChange = () => {
           <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
             <div style={{ flex: 1, background: SK.bgSoft, border: `1px solid ${SK.border}`, borderRadius: 8, padding: '8px 10px', textAlign: 'center' }}>
               <div style={{ fontFamily: SK.fMono, fontSize: 18, fontWeight: 700, color: SK.green }}>{needFromPartner.length}</div>
-              <div style={{ fontSize: 10, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 0.8 }}>Puedo recibir</div>
+              <div style={{ fontSize: 11, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 0.8 }}>Puedo recibir</div>
             </div>
             <div style={{ flex: 1, background: SK.bgSoft, border: `1px solid ${SK.border}`, borderRadius: 8, padding: '8px 10px', textAlign: 'center' }}>
               <div style={{ fontFamily: SK.fMono, fontSize: 18, fontWeight: 700, color: SK.gold }}>{theyNeedFromMe.length}</div>
-              <div style={{ fontSize: 10, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 0.8 }}>Puedo dar</div>
+              <div style={{ fontSize: 11, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 0.8 }}>Puedo dar</div>
             </div>
           </div>
           <button
@@ -1206,17 +1267,17 @@ function ScanTab({ collection = {}, userId = null, onTradeOffersChange = () => {
               <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
                 <div style={{ flex: 1, background: `${SK.coral}15`, border: `1px solid ${SK.coral}40`, borderRadius: 8, padding: '6px 10px', textAlign: 'center' }}>
                   <div style={{ fontFamily: SK.fMono, fontSize: 16, fontWeight: 800, color: SK.coral }}>−{fromItems.length}</div>
-                  <div style={{ fontSize: 9, color: SK.coral, textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 600 }}>Darás</div>
+                  <div style={{ fontSize: 11, color: SK.coral, textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 600 }}>Darás</div>
                 </div>
                 <div style={{ flex: 1, background: `${SK.green}15`, border: `1px solid ${SK.green}40`, borderRadius: 8, padding: '6px 10px', textAlign: 'center' }}>
                   <div style={{ fontFamily: SK.fMono, fontSize: 16, fontWeight: 800, color: SK.green }}>+{toItems.length}</div>
-                  <div style={{ fontSize: 9, color: SK.green, textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 600 }}>Recibirás</div>
+                  <div style={{ fontSize: 11, color: SK.green, textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 600 }}>Recibirás</div>
                 </div>
                 <div style={{ flex: 1, background: `${SK.gold}15`, border: `1px solid ${SK.gold}40`, borderRadius: 8, padding: '6px 10px', textAlign: 'center' }}>
                   <div style={{ fontFamily: SK.fMono, fontSize: 16, fontWeight: 800, color: toItems.length - fromItems.length >= 0 ? SK.green : SK.coral }}>
                     {toItems.length - fromItems.length > 0 ? '+' : ''}{toItems.length - fromItems.length}
                   </div>
-                  <div style={{ fontSize: 9, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 600 }}>Balance</div>
+                  <div style={{ fontSize: 11, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 600 }}>Balance</div>
                 </div>
               </div>
             </div>
@@ -1226,15 +1287,20 @@ function ScanTab({ collection = {}, userId = null, onTradeOffersChange = () => {
               {/* Ofreces — tus repetidas que le faltan al partner. Si no hay repetidas, muestra todas tus estampas */}
               <div style={{ marginBottom: 14 }}>
                 <div style={{ fontSize: 10, color: SK.coral, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700, marginBottom: 6 }}>
-                  Ofreces ({fromItems.length}/{theyNeedFromMe.length || myDuplicates.length || Object.keys(collection).length} seleccionadas)
+                  Ofreces ({fromItems.length}/{theyNeedFromMe.length || myDuplicates.length} seleccionadas)
                 </div>
-                {theyNeedFromMe.length === 0 && (
+                {theyNeedFromMe.length === 0 && myDuplicates.length > 0 && (
                   <div style={{ fontSize: 11, color: SK.textMute, background: SK.bgSoft, border: `1px solid ${SK.border}`, borderRadius: 10, padding: '10px 12px', marginBottom: 8 }}>
-                    No tienes repetidas que le falten al partner. Puedes ofrecer cualquier estampa.
+                    No tienes repetidas que le falten al partner. Puedes ofrecer tus otras repetidas.
+                  </div>
+                )}
+                {myDuplicates.length === 0 && (
+                  <div style={{ fontSize: 11, color: SK.textMute, background: SK.bgSoft, border: `1px solid ${SK.border}`, borderRadius: 10, padding: '10px 12px', marginBottom: 8 }}>
+                    No tienes estampas repetidas para ofrecer.
                   </div>
                 )}
                 <div style={{ background: SK.bgSoft, border: `1px solid ${SK.border}`, borderRadius: 10, overflow: 'hidden' }}>
-                  {(theyNeedFromMe.length > 0 ? theyNeedFromMe : myDuplicates.length > 0 ? myDuplicates : Object.entries(collection).map(([id, qty]) => ({ id, qty }))).map((d, i, a) => {
+                  {(theyNeedFromMe.length > 0 ? theyNeedFromMe : myDuplicates).map((d, i, a) => {
                     const m = stickerMeta(d.id);
                     const checked = fromItems.includes(d.id);
                     return (
@@ -1304,7 +1370,7 @@ function ScanTab({ collection = {}, userId = null, onTradeOffersChange = () => {
             </div>
 
             {/* Footer buttons */}
-            <div style={{ padding: '10px 16px 20px', borderTop: `1px solid ${SK.border}`, flexShrink: 0, display: 'flex', gap: 8 }}>
+            <div style={{ padding: `10px 16px calc(env(safe-area-inset-bottom, 0px) + 20px)`, borderTop: `1px solid ${SK.border}`, flexShrink: 0, display: 'flex', gap: 8 }}>
               <button onClick={() => setModalOpen(false)} style={{
                 flex: 1, background: 'transparent', border: `1px solid ${SK.border}`,
                 borderRadius: 10, padding: '12px 0', color: SK.text,
@@ -1421,19 +1487,19 @@ function ProfileScreen({ onNav, stats, achievements = [], userData, onUpdateUser
   return (
     <>
       <PhoneShell active="profile" onNav={onNav}>
-        <div style={{ flex: 1, overflow: 'auto', paddingBottom: 16 }}>
+        {!userData ? (
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, color: SK.textMute, fontSize: 13 }}>
+            <LoadingSpinner size={18}/>
+            Cargando perfil...
+          </div>
+        ) : (
+        <div style={{ flex: 1, overflow: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)' }}>
           {/* Header */}
           <div style={{ padding: '20px 20px 20px', textAlign: 'center' }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
-              <div style={{
-                width: 80, height: 80, borderRadius: 40,
-                border: `2px solid ${SK.gold}`,
-                background: SK.surface,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontFamily: SK.fHead, fontSize: 30, fontWeight: 700,
-                color: SK.gold,
-                boxShadow: `0 4px 16px -4px ${SK.goldDeep}`,
-              }}>{initials}</div>
+              <div style={{ border: `2px solid ${SK.gold}`, borderRadius: 40, boxShadow: `0 4px 16px -4px ${SK.goldDeep}` }}>
+                <AvatarBubble userData={user} size={80} />
+              </div>
             </div>
             <div style={{ fontFamily: SK.fHead, fontSize: 22, fontWeight: 700, color: SK.text }}>{safeName}</div>
             <div style={{ fontFamily: SK.fMono, fontSize: 13, color: SK.textMute, marginTop: 2 }}>@{safeUsername}</div>
@@ -1450,7 +1516,7 @@ function ProfileScreen({ onNav, stats, achievements = [], userData, onUpdateUser
 
         {/* Achievements */}
         <div style={{ padding: '0 20px 20px' }}>
-          <div style={{ fontSize: 10, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600 }}>logros</div>
+          <div style={{ fontSize: 11, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600 }}>logros</div>
           <div style={{ fontFamily: SK.fHead, fontSize: 20, fontWeight: 700, color: SK.text, marginTop: 2, marginBottom: 12 }}>Insignias</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
             {(achievements.length ? achievements : [
@@ -1470,7 +1536,7 @@ function ProfileScreen({ onNav, stats, achievements = [], userData, onUpdateUser
 
           {/* Recently marked stickers */}
           <div style={{ padding: '0 20px 20px' }}>
-            <div style={{ fontSize: 10, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600 }}>recientes</div>
+            <div style={{ fontSize: 11, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600 }}>recientes</div>
             <div style={{ fontFamily: SK.fHead, fontSize: 20, fontWeight: 700, color: SK.text, marginTop: 2, marginBottom: 12 }}>Últimas marcadas</div>
             {recentStickerItems.length === 0 ? (
               <div style={{ background: SK.surface, border: `1px solid ${SK.border}`, borderRadius: 12 }}>
@@ -1510,6 +1576,21 @@ function ProfileScreen({ onNav, stats, achievements = [], userData, onUpdateUser
               textTransform: 'uppercase', letterSpacing: 1,
               cursor: 'pointer',
             }}>Editar perfil</button>
+            <button onClick={() => {
+              const username = userData?.username;
+              if (!username) return;
+              const base = window.location.origin + window.location.pathname;
+              const link = `${base}#trade=@${username}`;
+              const msg = `¡Hola! Te invito a intercambiar figuritas conmigo en Stickio.\nMirá mis repetidas y proponé un trade aquí: ${link}`;
+              window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+            }} style={{
+              width: '100%', padding: '12px 0',
+              background: 'transparent', color: SK.text,
+              border: `1px solid ${SK.border}`, borderRadius: 10,
+              fontFamily: SK.fHead, fontWeight: 700, fontSize: 13,
+              textTransform: 'uppercase', letterSpacing: 1,
+              cursor: 'pointer',
+            }}>Compartir perfil</button>
             <button onClick={async () => {
               if (!window.confirm('¿Cerrar sesión?')) return;
               if (window.supabase?.auth) await window.supabase.auth.signOut();
@@ -1523,7 +1604,18 @@ function ProfileScreen({ onNav, stats, achievements = [], userData, onUpdateUser
               cursor: 'pointer',
             }}>Cerrar sesión</button>
           </div>
+
+          {/* Footer legal */}
+          <div style={{ padding: '0 20px 24px', textAlign: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginBottom: 8 }}>
+              <a href="privacy.html" target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: SK.textDim, textDecoration: 'none', letterSpacing: 0.4 }}>Privacidad</a>
+              <a href="terms.html" target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: SK.textDim, textDecoration: 'none', letterSpacing: 0.4 }}>Términos</a>
+            </div>
+            <div style={{ fontSize: 11, color: SK.textDim, letterSpacing: 0.6, textTransform: 'uppercase' }}>By ZIVELO</div>
+            <div style={{ fontSize: 11, color: SK.textDim, marginTop: 3 }}>© {new Date().getFullYear()} ZIVELO. All rights reserved.</div>
+          </div>
         </div>
+        )}
       </PhoneShell>
       {editOpen && (
         <div style={{
@@ -1559,7 +1651,7 @@ function ProfileScreen({ onNav, stats, achievements = [], userData, onUpdateUser
               />
               <input
                 value={form.username}
-                onChange={e => setForm(prev => ({ ...prev, username: e.target.value.replace(/\s/g, '_').toLowerCase() }))}
+                onChange={e => setForm(prev => ({ ...prev, username: e.target.value.toLowerCase().replace(/[^a-z0-9_.]/g, '') }))}
                 onBlur={() => runAvailabilityCheck('username', form.username)}
                 placeholder="Username"
                 style={{
@@ -1643,7 +1735,7 @@ function ProfileScreen({ onNav, stats, achievements = [], userData, onUpdateUser
               )}
               <textarea
                 value={form.bio}
-                onChange={e => setForm(prev => ({ ...prev, bio: e.target.value }))}
+                onChange={e => setForm(prev => ({ ...prev, bio: e.target.value.slice(0, 160) }))}
                 placeholder="Bio"
                 rows={3}
                 style={{
@@ -1655,6 +1747,7 @@ function ProfileScreen({ onNav, stats, achievements = [], userData, onUpdateUser
                   resize: 'vertical',
                 }}
               />
+              <div style={{ fontSize: 11, textAlign: 'right', color: form.bio.length >= 160 ? SK.coral : SK.textDim }}>{form.bio.length}/160</div>
               {errorMsg && <div style={{ fontSize: 11, color: SK.coral }}>{errorMsg}</div>}
             </div>
             <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
@@ -1669,22 +1762,27 @@ function ProfileScreen({ onNav, stats, achievements = [], userData, onUpdateUser
                 if (!onUpdateUser) { setEditOpen(false); return; }
                 setSaving(true);
                 setErrorMsg('');
-                const { error, message } = await onUpdateUser({
-                  ...userData,
-                  name: form.name,
-                  username: form.username,
-                  email: form.email,
-                  bio: form.bio,
-                  location: form.location,
-                  phone: window.normalizeIntlPhone ? window.normalizeIntlPhone(form.phone) : form.phone,
-                  whatsapp: window.normalizeIntlPhone ? window.normalizeIntlPhone(form.whatsapp) : form.whatsapp,
-                });
-                setSaving(false);
-                if (error) {
-                  setErrorMsg(message || 'No se pudo guardar el perfil.');
-                  return;
+                try {
+                  const { error, message } = await onUpdateUser({
+                    ...userData,
+                    name: form.name,
+                    username: form.username,
+                    email: form.email,
+                    bio: form.bio,
+                    location: form.location,
+                    phone: window.normalizeIntlPhone ? window.normalizeIntlPhone(form.phone) : form.phone,
+                    whatsapp: window.normalizeIntlPhone ? window.normalizeIntlPhone(form.whatsapp) : form.whatsapp,
+                  });
+                  if (error) {
+                    setErrorMsg(message || 'No se pudo guardar el perfil.');
+                    return;
+                  }
+                  setEditOpen(false);
+                } catch (err) {
+                  setErrorMsg('Error inesperado. Intenta de nuevo.');
+                } finally {
+                  setSaving(false);
                 }
-                setEditOpen(false);
               }} style={{
                 flex: 1, padding: '10px 0',
                 background: canSave ? SK.gold : SK.border, color: canSave ? SK.bg : SK.textMute,

@@ -6,22 +6,35 @@ window.MOBILE_W = MOBILE_W;
 window.MOBILE_H = MOBILE_H;
 
 // ─────────────────────────────────────────────────────────────
-// Bottom nav
+// Bottom nav — hamburger drawer
 // ─────────────────────────────────────────────────────────────
 function BottomNav({ active, onNav }) {
+  const [open, setOpen] = React.useState(false);
   const items = [
-    { id: 'home', label: 'Inicio', Icon: Icon.Home },
-    { id: 'album', label: 'Álbum', Icon: Icon.Grid },
-    { id: 'trade', label: 'Trade', Icon: Icon.Swap },
-    { id: 'marketplace', label: 'Market', Icon: Icon.Store },
-    { id: 'profile', label: 'Perfil', Icon: Icon.User },
+    { id: 'home',        label: 'Inicio',  Icon: Icon.Home  },
+    { id: 'album',       label: 'Álbum',   Icon: Icon.Grid  },
+    { id: 'trade',       label: 'Trade',   Icon: Icon.Swap  },
+    { id: 'marketplace', label: 'Market',  Icon: Icon.Store },
+    { id: 'profile',     label: 'Perfil',  Icon: Icon.User  },
   ];
-  return (
+  const current = items.find(i => i.id === active) || items[0];
+  const handleNav = (id) => { setOpen(false); onNav(id); };
+
+  const burgerBar = (extra) => (
+    <span style={{
+      display: 'block', width: 22, height: 2,
+      background: open ? SK.gold : SK.textMute,
+      borderRadius: 2, transition: 'transform 0.2s, opacity 0.2s, background 0.2s',
+      ...extra,
+    }}/>
+  );
+
+  const bar = (
     <div style={{
       flexShrink: 0,
       background: SK.surface,
       borderTop: `1px solid ${SK.border}`,
-      paddingBottom: 18,
+      paddingBottom: 'env(safe-area-inset-bottom, 8px)',
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-around', padding: '10px 12px 6px' }}>
         {items.map(it => {
@@ -31,17 +44,78 @@ function BottomNav({ active, onNav }) {
             <button key={it.id} onClick={() => onNav(it.id)} style={{
               background: 'none', border: 'none', cursor: 'pointer',
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-              padding: '6px 12px',
+              padding: '8px 12px', minHeight: 44,
             }}>
               <it.Icon s={22} c={c} filled={on}/>
               <span style={{
-                fontFamily: SK.fBody, fontSize: 10, fontWeight: on ? 700 : 500,
+                fontFamily: SK.fBody, fontSize: 11, fontWeight: on ? 700 : 500,
                 color: c, letterSpacing: 0.3, textTransform: 'uppercase',
               }}>{it.label}</span>
             </button>
           );
         })}
       </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <span style={{
+          fontFamily: SK.fBody, fontSize: 11, fontWeight: 600,
+          color: SK.textMute, textTransform: 'uppercase', letterSpacing: 0.4,
+        }}>{current.label}</span>
+        <button
+          onClick={() => setOpen(o => !o)}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, display: 'flex', flexDirection: 'column', gap: 5 }}
+        >
+          {burgerBar({ transform: open ? 'rotate(45deg) translate(5px, 5px)' : 'none' })}
+          {burgerBar({ opacity: open ? 0 : 1 })}
+          {burgerBar({ transform: open ? 'rotate(-45deg) translate(5px, -5px)' : 'none' })}
+        </button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{ flexShrink: 0, background: SK.surface, borderBottom: `1px solid ${SK.border}` }}>
+      {bar}
+
+      {open && (
+        <>
+          {/* Backdrop */}
+          <div
+            onClick={() => setOpen(false)}
+            style={{ position: 'absolute', inset: 0, zIndex: 40, background: 'rgba(0,0,0,0.55)' }}
+          />
+          {/* Drawer — cae hacia abajo */}
+          <div style={{
+            position: 'absolute', top: 0, left: 0, right: 0, zIndex: 50,
+            background: SK.surface,
+            borderBottom: `1px solid ${SK.border}`,
+            borderRadius: '0 0 18px 18px',
+          }}>
+            {bar}
+            <div style={{
+              display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: 8, padding: '8px 16px 20px',
+            }}>
+              {items.map(it => {
+                const on = active === it.id;
+                return (
+                  <button key={it.id} onClick={() => handleNav(it.id)} style={{
+                    background: on ? `${SK.gold}18` : SK.surfaceHi,
+                    border: `1px solid ${on ? SK.gold + '55' : SK.border}`,
+                    borderRadius: 12, cursor: 'pointer', padding: '14px 8px',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                  }}>
+                    <it.Icon s={24} c={on ? SK.gold : SK.textMute} filled={on}/>
+                    <span style={{
+                      fontFamily: SK.fBody, fontSize: 11, fontWeight: on ? 700 : 500,
+                      color: on ? SK.gold : SK.textMute, letterSpacing: 0.3, textTransform: 'uppercase',
+                    }}>{it.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -53,7 +127,7 @@ function PhoneShell({ children, showNav = true, active, onNav }) {
   return (
     <div style={{
       width: MOBILE_W,
-      height: '100dvh',
+      height: '100%',
       minHeight: MOBILE_H,
       background: SK.bg,
       backgroundImage: HEX_PATTERN,
@@ -62,12 +136,11 @@ function PhoneShell({ children, showNav = true, active, onNav }) {
       overflow: 'hidden',
       position: 'relative',
       paddingTop: 'env(safe-area-inset-top, 0px)',
-      paddingBottom: 'env(safe-area-inset-bottom, 0px)',
     }}>
+      {showNav && <BottomNav active={active} onNav={onNav}/>}
       <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         {children}
       </div>
-      {showNav && <BottomNav active={active} onNav={onNav}/>}
     </div>
   );
 }
@@ -308,11 +381,11 @@ function LoginScreen({ onLogin, onRegister, onForgot }) {
         </div>
         <div style={{ textAlign: 'center', marginTop: 12 }}>
           <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginBottom: 8 }}>
-            <a href="privacy.html" target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: SK.textDim, textDecoration: 'none', letterSpacing: 0.4 }}>Privacidad</a>
-            <a href="terms.html" target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: SK.textDim, textDecoration: 'none', letterSpacing: 0.4 }}>Términos</a>
+            <a href="privacy.html" target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: SK.textDim, textDecoration: 'none', letterSpacing: 0.4 }}>Privacidad</a>
+            <a href="terms.html" target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: SK.textDim, textDecoration: 'none', letterSpacing: 0.4 }}>Términos</a>
           </div>
-          <div style={{ fontSize: 10, color: SK.textDim, letterSpacing: 0.6, textTransform: 'uppercase' }}>By ZIVELO</div>
-          <div style={{ fontSize: 9, color: SK.textDim, marginTop: 3 }}>© 2026 ZIVELO. All rights reserved.</div>
+          <div style={{ fontSize: 11, color: SK.textDim, letterSpacing: 0.6, textTransform: 'uppercase' }}>By ZIVELO</div>
+          <div style={{ fontSize: 11, color: SK.textDim, marginTop: 3 }}>© {new Date().getFullYear()} ZIVELO. All rights reserved.</div>
         </div>
       </div>
     </PhoneShell>
@@ -336,6 +409,7 @@ function RegisterScreen({ onRegister, onLogin }) {
   const [errMsg, setErrMsg]           = React.useState(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [emailSent, setEmailSent]     = React.useState(false);
+  const [submittedEmail, setSubmittedEmail] = React.useState('');
   const [acceptTerms, setAcceptTerms] = React.useState(false);
   const [acceptPrivacy, setAcceptPrivacy] = React.useState(false);
 
@@ -374,7 +448,12 @@ function RegisterScreen({ onRegister, onLogin }) {
       setErrMsg('No aceptamos emails desechables. Usa un email permanente.');
       return;
     }
-    
+
+    if (pwd.length < 6) {
+      setErrMsg('La contraseña debe tener al menos 6 caracteres.');
+      return;
+    }
+
     const normalizeText = (text) => {
       return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
     };
@@ -434,7 +513,7 @@ function RegisterScreen({ onRegister, onLogin }) {
       if (error) {
         const msg = error.message || '';
         if (msg.toLowerCase().includes('already registered')) {
-          setErrMsg('Ese email ya está registrado. Inicia sesión o usa otro.');
+          setErrMsg('Ese email ya está registrado. Inicia sesión o usa otro correo.');
         } else if (msg.toLowerCase().includes('invalid') || msg.toLowerCase().includes('email')) {
           setErrMsg('Revisa el email e intenta de nuevo.');
         } else {
@@ -442,7 +521,15 @@ function RegisterScreen({ onRegister, onLogin }) {
         }
         return;
       }
+      // Si Supabase retorna user sin identities = email enumeration protection activo
+      // (el email ya existía pero Supabase no revela el error — igual envía un correo)
+      if (data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+        setErrMsg('Ese email ya está registrado. Inicia sesión o usa otro correo.');
+        return;
+      }
       if (data?.user) {
+        // Intentar crear/actualizar el perfil. Si falla por RLS (sin sesión activa),
+        // el perfil se creará via trigger o al primer login. No bloquear el flujo.
         const { error: profileErr } = await window.supabase.from('profiles').upsert({
           id: data.user.id,
           username: cleanUsername,
@@ -454,21 +541,29 @@ function RegisterScreen({ onRegister, onLogin }) {
         }, { onConflict: 'id' });
         if (profileErr) {
           if (profileErr.code === '23505') {
-            if (profileErr.message?.includes('username')) setErrMsg('Ese usuario ya existe. Elegí otro.');
-            else if (profileErr.message?.includes('phone')) setErrMsg('Ese número ya está registrado.');
-            else setErrMsg('Ya existe una cuenta con esos datos.');
-          } else {
-            setErrMsg('No pudimos guardar tu perfil. Intenta de nuevo.');
+            if (profileErr.message?.includes('username')) {
+              setErrMsg('Ese usuario ya existe. Elegí otro.');
+              return;
+            } else if (profileErr.message?.includes('phone')) {
+              setErrMsg('Ese número ya está registrado.');
+              return;
+            }
+            // Otro conflicto único — la cuenta se creó igual, mostrar confirmación
           }
-          return;
+          // Si el error es de permisos (RLS sin sesión activa), no bloquear el flujo
+          // El perfil se completará al confirmar el correo y hacer login
         }
+        // Intentar guardar whatsapp/phone independientemente del resultado del upsert
+        // (el trigger ya lo guarda en nuevos registros, esto es respaldo para el flujo sin sesión)
         if (cleanWhatsapp) {
           await window.supabase
             .from('profiles')
             .update({ phone: cleanWhatsapp, whatsapp: cleanWhatsapp })
             .eq('id', data.user.id);
         }
+        // signUp fue exitoso — el correo de confirmación ya fue enviado por Supabase
         if (!data.session) {
+          setSubmittedEmail(cleanEmail);
           setEmailSent(true);
           return;
         }
@@ -481,9 +576,9 @@ function RegisterScreen({ onRegister, onLogin }) {
 
   if (emailSent) return (
     <PhoneShell showNav={false}>
-      <div style={{ flex: 1, overflow: 'auto' }}>
+      <div style={{ flex: 1, overflow: 'auto', WebkitOverflowScrolling: 'touch' }}>
         <div style={{ padding: '28px 24px 10px' }}>
-          <div style={{ fontSize: 10, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600 }}>crear cuenta</div>
+          <div style={{ fontSize: 11, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600 }}>crear cuenta</div>
           <div style={{ fontFamily: SK.fHead, fontSize: 26, fontWeight: 700, color: SK.text, marginTop: 4 }}>Regístrate gratis</div>
         </div>
       </div>
@@ -518,7 +613,7 @@ function RegisterScreen({ onRegister, onLogin }) {
             Te enviamos un link de confirmación a
           </div>
           <div style={{ fontFamily: SK.fMono, fontSize: 13, color: SK.gold, fontWeight: 600, marginBottom: 16, textAlign: 'center' }}>
-            {cleanEmail || email}
+            {submittedEmail || email}
           </div>
           <div style={{ fontSize: 12, color: SK.textMute, lineHeight: 1.7, marginBottom: 28, textAlign: 'center' }}>
             Haz clic en el enlace del correo para activar tu cuenta.{'\n'}
@@ -538,9 +633,9 @@ function RegisterScreen({ onRegister, onLogin }) {
 
   return (
     <PhoneShell showNav={false}>
-      <div style={{ flex: 1, overflow: 'auto' }}>
+      <div style={{ flex: 1, overflow: 'auto', WebkitOverflowScrolling: 'touch' }}>
         <div style={{ padding: '28px 24px 10px' }}>
-          <div style={{ fontSize: 10, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600 }}>crear cuenta</div>
+          <div style={{ fontSize: 11, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600 }}>crear cuenta</div>
           <div style={{ fontFamily: SK.fHead, fontSize: 26, fontWeight: 700, color: SK.text, marginTop: 4 }}>Regístrate gratis</div>
         </div>
 
@@ -723,8 +818,8 @@ function RegisterScreen({ onRegister, onLogin }) {
                 ))}
               </select>
               {selectedCountry && (
-                <div style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 18, pointerEvents: 'none' }}>
-                  {selectedCountry.flag}
+                <div style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+                  <FlagImg code={selectedCountry.code} size={18} />
                 </div>
               )}
             </div>
@@ -801,8 +896,8 @@ function RegisterScreen({ onRegister, onLogin }) {
             ¿Ya tienes cuenta? <span onClick={onLogin} style={{ color: SK.gold, fontWeight: 600, cursor: 'pointer' }}>Inicia sesión</span>
           </div>
           <div style={{ textAlign: 'center', marginTop: 12 }}>
-            <div style={{ fontSize: 10, color: SK.textDim, letterSpacing: 0.6, textTransform: 'uppercase' }}>By ZIVELO</div>
-            <div style={{ fontSize: 9, color: SK.textDim, marginTop: 3 }}>© 2026 ZIVELO. All rights reserved.</div>
+            <div style={{ fontSize: 11, color: SK.textDim, letterSpacing: 0.6, textTransform: 'uppercase' }}>By ZIVELO</div>
+            <div style={{ fontSize: 11, color: SK.textDim, marginTop: 3 }}>© {new Date().getFullYear()} ZIVELO. All rights reserved.</div>
           </div>
         </div>
       </div>
@@ -835,9 +930,9 @@ function ResetPasswordRequestScreen({ onBack }) {
 
   return (
     <PhoneShell showNav={false}>
-      <div style={{ flex: 1, overflow: 'auto' }}>
+      <div style={{ flex: 1, overflow: 'auto', WebkitOverflowScrolling: 'touch' }}>
         <div style={{ padding: '28px 24px 10px' }}>
-          <div style={{ fontSize: 10, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600 }}>reestablecer</div>
+          <div style={{ fontSize: 11, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600 }}>reestablecer</div>
           <div style={{ fontFamily: SK.fHead, fontSize: 26, fontWeight: 700, color: SK.text, marginTop: 4 }}>Recuperar contraseña</div>
         </div>
 
@@ -944,10 +1039,10 @@ function DashboardScreen({ onNav, onNavToCountry, stats, collection = {}, activi
 
   return (
     <PhoneShell active="home" onNav={onNav}>
-      <div style={{ flex: 1, overflow: 'auto', paddingBottom: 90 }}>
+      <div style={{ flex: 1, overflow: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 100px)' }}>
         {/* Bell */}
         <div style={{
-          padding: '4px 20px 12px',
+          padding: '10px 20px 12px',
           display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
         }}>
           <button
@@ -956,7 +1051,7 @@ function DashboardScreen({ onNav, onNavToCountry, stats, collection = {}, activi
             }}
             style={{
               background: SK.surface, border: `1px solid ${SK.border}`,
-              width: 40, height: 40, borderRadius: 20,
+              width: 44, height: 44, borderRadius: 22,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               position: 'relative', cursor: 'pointer',
             }}
@@ -990,8 +1085,8 @@ function DashboardScreen({ onNav, onNavToCountry, stats, collection = {}, activi
               style={{
                 position: 'absolute', bottom: 0, left: 0, right: 0,
                 background: SK.surface, borderRadius: '16px 16px 0 0',
-                maxHeight: '70vh', overflowY: 'auto',
-                padding: '16px 0 32px',
+                maxHeight: '70vh', overflowY: 'auto', WebkitOverflowScrolling: 'touch',
+                padding: `16px 0 calc(env(safe-area-inset-bottom, 0px) + 24px)`,
                 borderTop: `1px solid ${SK.border}`,
               }}
             >
@@ -1119,7 +1214,7 @@ function DashboardScreen({ onNav, onNavToCountry, stats, collection = {}, activi
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           }}>
             <div>
-              <div style={{ fontSize: 10, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600 }}>continúa coleccionando</div>
+              <div style={{ fontSize: 11, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600 }}>continúa coleccionando</div>
               <div style={{ fontFamily: SK.fHead, fontSize: 20, fontWeight: 700, color: SK.text, marginTop: 2 }}>Por selección</div>
             </div>
             <button onClick={() => onNav('album')} style={{ background: 'none', border: 'none', color: SK.gold, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 2, fontSize: 12, fontWeight: 600 }}>
@@ -1138,7 +1233,7 @@ function DashboardScreen({ onNav, onNavToCountry, stats, collection = {}, activi
 
         {/* Activity feed */}
         <div style={{ padding: '0 20px 16px' }}>
-          <div style={{ fontSize: 10, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600, marginBottom: 4 }}>actividad reciente</div>
+          <div style={{ fontSize: 11, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600, marginBottom: 4 }}>actividad reciente</div>
           <div style={{ fontFamily: SK.fHead, fontSize: 20, fontWeight: 700, color: SK.text, marginBottom: 12 }}>Últimos movimientos</div>
           <div style={{ background: SK.surface, border: `1px solid ${SK.border}`, borderRadius: 12, overflow: 'hidden' }}>
             {activityLog.length === 0 ? (
@@ -1156,17 +1251,6 @@ function DashboardScreen({ onNav, onNavToCountry, stats, collection = {}, activi
         </div>
       </div>
 
-      {/* FAB */}
-      <button onClick={() => onNav('album')} style={{
-        position: 'absolute', right: 20, bottom: 96,
-        width: 56, height: 56, borderRadius: 28,
-        background: SK.gold, border: 'none',
-        boxShadow: `0 8px 24px -4px ${SK.goldDeep}, 0 0 0 6px ${SK.gold}22`,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        cursor: 'pointer', zIndex: 10,
-      }}>
-        <Icon.Plus s={26} c={SK.bg}/>
-      </button>
     </PhoneShell>
   );
 }
@@ -1198,7 +1282,7 @@ function StatCard({ label, value, color, IconC }) {
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
         <IconC s={12} c={color}/>
-        <span style={{ fontSize: 10, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 600 }}>{label}</span>
+        <span style={{ fontSize: 11, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 600 }}>{label}</span>
       </div>
       <div style={{ fontFamily: SK.fMono, fontSize: 26, fontWeight: 700, color, letterSpacing: -0.5, lineHeight: 1 }}>{value}</div>
     </div>
@@ -1218,7 +1302,7 @@ function TeamCard({ country, onNavToCountry }) {
       cursor: 'pointer', textAlign: 'left',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontSize: 28 }}>{country.flag}</span>
+        <FlagImg code={country.code} size={28} />
         <span style={{ fontFamily: SK.fMono, fontSize: 11, color: SK.textMute }}>
           {country.have}/{country.total}
         </span>
@@ -1272,6 +1356,7 @@ function ResetPasswordScreen({ onDone }) {
     setErrMsg(null);
     setInfoMsg(null);
     if (!pwd || !confirm) { setErrMsg('Completa ambos campos.'); return; }
+    if (pwd.length < 6) { setErrMsg('La contraseña debe tener al menos 6 caracteres.'); return; }
     if (!match) { setErrMsg('Las contraseñas no coinciden.'); return; }
     if (!window.supabase?.auth) { setErrMsg('Supabase no está configurado.'); return; }
     const { error } = await window.supabase.auth.updateUser({ password: pwd });
@@ -1282,9 +1367,9 @@ function ResetPasswordScreen({ onDone }) {
 
   return (
     <PhoneShell showNav={false}>
-      <div style={{ flex: 1, overflow: 'auto' }}>
+      <div style={{ flex: 1, overflow: 'auto', WebkitOverflowScrolling: 'touch' }}>
         <div style={{ padding: '28px 24px 10px' }}>
-          <div style={{ fontSize: 10, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600 }}>nueva contraseña</div>
+          <div style={{ fontSize: 11, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600 }}>nueva contraseña</div>
           <div style={{ fontFamily: SK.fHead, fontSize: 26, fontWeight: 700, color: SK.text, marginTop: 4 }}>Reestablecer</div>
         </div>
 

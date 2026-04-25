@@ -273,12 +273,7 @@ function DesktopTopbar({ title, sub, onCmdOpen, userData }) {
             cursor: 'pointer',
             transition: 'background 0.15s, border-color 0.15s',
           }}>
-            <div style={{
-              width: 28, height: 28, borderRadius: 14,
-              background: SK.gold, color: SK.bg,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontFamily: SK.fHead, fontSize: 12, fontWeight: 700,
-            }}>{initials}</div>
+            <AvatarBubble userData={userData} size={28} />
             <span style={{ fontSize: 13, fontWeight: 500, color: SK.text }}>{firstName}</span>
           </div>
           {hovUser && (
@@ -523,7 +518,7 @@ function DashboardDesktop({ onNav, onNavToCountry, stats, collection = {}, activ
               <div style={{ fontFamily: SK.fHead, fontSize: 22, fontWeight: 700, color: SK.text, marginTop: 2 }}>Por selección</div>
             </div>
             <button onClick={() => onNav('album')} style={{ background: 'none', border: 'none', color: SK.gold, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, fontWeight: 600 }}>
-              Ver todas (48) <Icon.ChevronRight s={14} c={SK.gold}/>
+              Ver todas ({COUNTRIES.length}) <Icon.ChevronRight s={14} c={SK.gold}/>
             </button>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 12 }}>
