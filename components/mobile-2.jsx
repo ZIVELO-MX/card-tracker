@@ -1064,11 +1064,15 @@ function ScanTab({ collection = {}, userId = null, onTradeOffersChange = () => {
     [collection]
   );
 
+  // Estampas que el partner tiene y yo NO tengo (no solo sus repetidas)
   const needFromPartner = React.useMemo(() => {
     if (!partner) return [];
-    return partner.duplicates.filter(d => (collection[d.id] || 0) === 0);
+    return Object.entries(partner.collectionMap || {})
+      .filter(([id]) => (collection[id] || 0) === 0)
+      .map(([id, qty]) => ({ id, qty }));
   }, [partner, collection]);
 
+  // Mis repetidas que el partner NO tiene
   const theyNeedFromMe = React.useMemo(() => {
     if (!partner) return [];
     return myDuplicates.filter(d => (partner.collectionMap?.[d.id] || 0) === 0);
@@ -1176,8 +1180,8 @@ function ScanTab({ collection = {}, userId = null, onTradeOffersChange = () => {
           </div>
           <button
             onClick={() => setModalOpen(true)}
-            disabled={!needFromPartner.length || !theyNeedFromMe.length || !userId}
-            style={{ width: '100%', marginTop: 10, background: (!needFromPartner.length || !theyNeedFromMe.length || !userId) ? SK.border : SK.gold, color: (!needFromPartner.length || !theyNeedFromMe.length || !userId) ? SK.textMute : SK.bg, border: 'none', borderRadius: 8, padding: '10px 12px', fontFamily: SK.fHead, fontWeight: 700, fontSize: 12, textTransform: 'uppercase' }}
+            disabled={!userId || !partner?.id}
+            style={{ width: '100%', marginTop: 10, background: (!userId || !partner?.id) ? SK.border : SK.gold, color: (!userId || !partner?.id) ? SK.textMute : SK.bg, border: 'none', borderRadius: 8, padding: '10px 12px', fontFamily: SK.fHead, fontWeight: 700, fontSize: 12, textTransform: 'uppercase' }}
           >Proponer intercambio</button>
         </div>
       )}
@@ -1212,13 +1216,18 @@ function ScanTab({ collection = {}, userId = null, onTradeOffersChange = () => {
 
             {/* Lists */}
             <div style={{ flex: 1, overflow: 'auto', padding: '10px 16px' }}>
-              {/* Ofreces — tus repetidas que le faltan al partner */}
+              {/* Ofreces — tus repetidas que le faltan al partner. Si no hay repetidas, muestra todas tus estampas */}
               <div style={{ marginBottom: 14 }}>
                 <div style={{ fontSize: 10, color: SK.coral, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700, marginBottom: 6 }}>
-                  Ofreces ({fromItems.length}/{theyNeedFromMe.length} seleccionadas)
+                  Ofreces ({fromItems.length}/{theyNeedFromMe.length || myDuplicates.length || Object.keys(collection).length} seleccionadas)
                 </div>
+                {theyNeedFromMe.length === 0 && (
+                  <div style={{ fontSize: 11, color: SK.textMute, background: SK.bgSoft, border: `1px solid ${SK.border}`, borderRadius: 10, padding: '10px 12px', marginBottom: 8 }}>
+                    No tienes repetidas que le falten al partner. Puedes ofrecer cualquier estampa.
+                  </div>
+                )}
                 <div style={{ background: SK.bgSoft, border: `1px solid ${SK.border}`, borderRadius: 10, overflow: 'hidden' }}>
-                  {theyNeedFromMe.map((d, i, a) => {
+                  {(theyNeedFromMe.length > 0 ? theyNeedFromMe : myDuplicates.length > 0 ? myDuplicates : Object.entries(collection).map(([id, qty]) => ({ id, qty }))).map((d, i, a) => {
                     const m = stickerMeta(d.id);
                     const checked = fromItems.includes(d.id);
                     return (
@@ -1241,14 +1250,24 @@ function ScanTab({ collection = {}, userId = null, onTradeOffersChange = () => {
                       </label>
                     );
                   })}
+                  {Object.keys(collection).length === 0 && (
+                    <div style={{ padding: '14px 12px', fontSize: 12, color: SK.textMute, textAlign: 'center' }}>
+                      No tienes estampas en tu colección aún.
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Solicitas — repetidas del partner que te faltan */}
+              {/* Solicitas — estampas del partner que te faltan */}
               <div style={{ marginBottom: 10 }}>
                 <div style={{ fontSize: 10, color: SK.green, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700, marginBottom: 6 }}>
                   Recibirás ({toItems.length}/{needFromPartner.length} seleccionadas)
                 </div>
+                {needFromPartner.length === 0 && (
+                  <div style={{ fontSize: 11, color: SK.textMute, background: SK.bgSoft, border: `1px solid ${SK.border}`, borderRadius: 10, padding: '10px 12px' }}>
+                    No tienes estampas faltantes que este usuario tenga disponibles.
+                  </div>
+                )}
                 <div style={{ background: SK.bgSoft, border: `1px solid ${SK.border}`, borderRadius: 10, overflow: 'hidden' }}>
                   {needFromPartner.map((d, i, a) => {
                     const m = stickerMeta(d.id);

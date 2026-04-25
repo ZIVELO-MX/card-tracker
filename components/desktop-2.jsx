@@ -345,9 +345,25 @@ function RegisterDesktop({ onRegister, onLogin }) {
   const handleSubmit = async () => {
     if (!canSubmit || isSubmitting) return;
     setErrMsg(null);
+
+    const normalizeText = (text) =>
+      text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+
+    const cleanEmail = email.trim().toLowerCase();
+    const emailRe = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRe.test(cleanEmail)) {
+      setErrMsg('El email no es válido. Debe tener formato: nombre@dominio.com');
+      return;
+    }
+    const blockedDomains = ['tempmail.com', '10minutemail.com', 'guerrillamail.com', 'mailinator.com', 'throwaway.email'];
+    if (blockedDomains.includes(cleanEmail.split('@')[1]?.toLowerCase())) {
+      setErrMsg('No aceptamos emails desechables. Usa un email permanente.');
+      return;
+    }
+
     setIsSubmitting(true);
-    const cleanName = name.trim();
-    const cleanUsername = username.trim().toLowerCase();
+    const cleanName     = normalizeText(name);
+    const cleanUsername = normalizeText(username).replace(/\s+/g, '').toLowerCase();
     const cleanWhatsapp = whatsapp.trim();
     if (!window.supabase?.auth) {
       setErrMsg('Supabase no está configurado.');
@@ -376,7 +392,7 @@ function RegisterDesktop({ onRegister, onLogin }) {
         }
       }
       const { data, error } = await window.supabase.auth.signUp({
-        email,
+        email: cleanEmail,
         password: pwd,
         options: {
           data: {
@@ -405,7 +421,7 @@ function RegisterDesktop({ onRegister, onLogin }) {
           id: data.user.id,
           username: cleanUsername,
           display_name: cleanName,
-          email,
+          email: cleanEmail,
           country_code: selectedCountry?.code || null,
           terms_accepted_at: new Date().toISOString(),
           privacy_accepted_at: new Date().toISOString(),
@@ -431,7 +447,7 @@ function RegisterDesktop({ onRegister, onLogin }) {
           setEmailSent(true);
           return;
         }
-        onRegister({ id: data.user.id, name: cleanName, username: cleanUsername, country: selectedCountry, whatsapp: cleanWhatsapp || null, email });
+        onRegister({ id: data.user.id, name: cleanName, username: cleanUsername, country: selectedCountry, whatsapp: cleanWhatsapp || null, email: cleanEmail });
       }
     } finally {
       setIsSubmitting(false);
@@ -453,28 +469,45 @@ function RegisterDesktop({ onRegister, onLogin }) {
       width: DESKTOP_W, height: DESKTOP_H,
       background: SK.bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
       color: SK.text, fontFamily: SK.fBody,
+      position: 'relative',
     }}>
-      <div style={{ maxWidth: 460, textAlign: 'center', padding: '0 32px' }}>
+      {/* Fondo difuminado */}
+      <div style={{ position: 'absolute', inset: 0, backgroundImage: HEX_PATTERN, opacity: 0.5 }}/>
+
+      {/* Modal centrado */}
+      <div style={{
+        position: 'relative', zIndex: 10,
+        background: SK.surface,
+        border: `1px solid ${SK.border}`,
+        borderRadius: 20,
+        padding: '48px 52px',
+        maxWidth: 480, width: '100%',
+        textAlign: 'center',
+        boxShadow: `0 32px 80px rgba(0,0,0,0.5)`,
+      }}>
         <div style={{
           width: 72, height: 72, borderRadius: '50%',
           background: `${SK.gold}22`, border: `2px solid ${SK.gold}`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           margin: '0 auto 24px', fontSize: 32,
         }}>✉️</div>
-        <div style={{ fontFamily: SK.fHead, fontWeight: 700, fontSize: 32, color: SK.text, marginBottom: 12 }}>
-          Revisa tu correo
+
+        <div style={{ fontFamily: SK.fHead, fontWeight: 700, fontSize: 30, color: SK.text, marginBottom: 12 }}>
+          ¡Revisa tu correo!
         </div>
-        <div style={{ fontSize: 15, color: SK.textMute, lineHeight: 1.6, marginBottom: 8 }}>
+        <div style={{ fontSize: 14, color: SK.textMute, lineHeight: 1.6, marginBottom: 8 }}>
           Te enviamos un link de confirmación a
         </div>
-        <div style={{ fontFamily: SK.fMono, fontSize: 15, color: SK.gold, fontWeight: 600, marginBottom: 24 }}>
-          {email}
+        <div style={{ fontFamily: SK.fMono, fontSize: 15, color: SK.gold, fontWeight: 600, marginBottom: 20 }}>
+          {cleanEmail || email}
         </div>
-        <div style={{ fontSize: 13, color: SK.textMute, lineHeight: 1.6, marginBottom: 32 }}>
-          Haz clic en el enlace del correo para activar tu cuenta. Revisa también la carpeta de spam si no lo ves.
+        <div style={{ fontSize: 13, color: SK.textMute, lineHeight: 1.7, marginBottom: 36 }}>
+          Haz clic en el enlace del correo para activar tu cuenta.
+          Revisa también la carpeta de <strong style={{ color: SK.text }}>spam</strong> si no lo ves.
         </div>
+
         <button onClick={onLogin} style={{
-          padding: '14px 32px', background: SK.gold, color: SK.bg,
+          width: '100%', padding: '14px 32px', background: SK.gold, color: SK.bg,
           border: 'none', borderRadius: 10,
           fontFamily: SK.fHead, fontWeight: 700, fontSize: 15,
           textTransform: 'uppercase', letterSpacing: 1.2, cursor: 'pointer',

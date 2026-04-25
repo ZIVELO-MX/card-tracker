@@ -52,13 +52,17 @@ function BottomNav({ active, onNav }) {
 function PhoneShell({ children, showNav = true, active, onNav }) {
   return (
     <div style={{
-      width: MOBILE_W, height: MOBILE_H,
+      width: MOBILE_W,
+      height: '100dvh',
+      minHeight: MOBILE_H,
       background: SK.bg,
       backgroundImage: HEX_PATTERN,
       display: 'flex', flexDirection: 'column',
       color: SK.text, fontFamily: SK.fBody,
       overflow: 'hidden',
       position: 'relative',
+      paddingTop: 'env(safe-area-inset-top, 0px)',
+      paddingBottom: 'env(safe-area-inset-bottom, 0px)',
     }}>
       <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         {children}
@@ -349,12 +353,35 @@ function RegisterScreen({ onRegister, onLogin }) {
     </svg>
   );
 
+  const validateEmail = (email) => {
+    const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return re.test(String(email).toLowerCase());
+  };
+
   const handleSubmit = async () => {
     if (!canSubmit || isSubmitting) return;
     setErrMsg(null);
+    
+    const cleanEmail = email.trim().toLowerCase();
+    if (!validateEmail(cleanEmail)) {
+      setErrMsg('El email no es válido. Debe tener formato: nombre@dominio.com');
+      return;
+    }
+    
+    const blockedDomains = ['tempmail.com', '10minutemail.com', 'guerrillamail.com', 'mailinator.com', 'throwaway.email'];
+    const emailDomain = cleanEmail.split('@')[1]?.toLowerCase();
+    if (blockedDomains.includes(emailDomain)) {
+      setErrMsg('No aceptamos emails desechables. Usa un email permanente.');
+      return;
+    }
+    
+    const normalizeText = (text) => {
+      return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+    };
+    
     setIsSubmitting(true);
-    const cleanName = name.trim();
-    const cleanUsername = username.trim().toLowerCase();
+    const cleanName     = normalizeText(name);
+    const cleanUsername = normalizeText(username).replace(/\s+/g, '').toLowerCase();
     const cleanWhatsapp = whatsapp.trim();
     if (!window.supabase?.auth) {
       setErrMsg('Supabase no está configurado.');
@@ -383,7 +410,7 @@ function RegisterScreen({ onRegister, onLogin }) {
         }
       }
       const { data, error } = await window.supabase.auth.signUp({
-        email,
+        email: cleanEmail,
         password: pwd,
         options: {
           data: {
@@ -412,7 +439,7 @@ function RegisterScreen({ onRegister, onLogin }) {
           id: data.user.id,
           username: cleanUsername,
           display_name: cleanName,
-          email,
+          email: cleanEmail,
           country_code: selectedCountry?.code || null,
           terms_accepted_at: new Date().toISOString(),
           privacy_accepted_at: new Date().toISOString(),
@@ -437,7 +464,7 @@ function RegisterScreen({ onRegister, onLogin }) {
           setEmailSent(true);
           return;
         }
-        onRegister({ id: data.user.id, name: cleanName, username: cleanUsername, country: selectedCountry, whatsapp: cleanWhatsapp || null, email });
+        onRegister({ id: data.user.id, name: cleanName, username: cleanUsername, country: selectedCountry, whatsapp: cleanWhatsapp || null, email: cleanEmail });
       }
     } finally {
       setIsSubmitting(false);
@@ -446,31 +473,57 @@ function RegisterScreen({ onRegister, onLogin }) {
 
   if (emailSent) return (
     <PhoneShell showNav={false}>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 28px' }}>
+      <div style={{ flex: 1, overflow: 'auto' }}>
+        <div style={{ padding: '28px 24px 10px' }}>
+          <div style={{ fontSize: 10, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600 }}>crear cuenta</div>
+          <div style={{ fontFamily: SK.fHead, fontSize: 26, fontWeight: 700, color: SK.text, marginTop: 4 }}>Regístrate gratis</div>
+        </div>
+      </div>
+
+      {/* Modal de confirmación */}
+      <div style={{
+        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
+        zIndex: 9999, display: 'flex', alignItems: 'flex-end',
+        backdropFilter: 'blur(4px)',
+      }}>
         <div style={{
-          width: 64, height: 64, borderRadius: '50%',
-          background: `${SK.gold}22`, border: `2px solid ${SK.gold}`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          marginBottom: 20, fontSize: 28,
-        }}>✉️</div>
-        <div style={{ fontFamily: SK.fHead, fontWeight: 700, fontSize: 24, color: SK.text, marginBottom: 10, textAlign: 'center' }}>
-          Revisa tu correo
+          width: '100%', background: SK.surface,
+          borderRadius: '20px 20px 0 0',
+          border: `1px solid ${SK.border}`,
+          borderBottom: 'none',
+          padding: '32px 28px 40px',
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          animation: 'slideUp 0.3s ease-out',
+        }}>
+          <div style={{
+            width: 56, height: 56, borderRadius: '50%',
+            background: `${SK.gold}22`, border: `2px solid ${SK.gold}`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            marginBottom: 18, fontSize: 26,
+          }}>✉️</div>
+
+          <div style={{ fontFamily: SK.fHead, fontWeight: 700, fontSize: 22, color: SK.text, marginBottom: 8, textAlign: 'center' }}>
+            ¡Revisa tu correo!
+          </div>
+
+          <div style={{ fontSize: 13, color: SK.textMute, lineHeight: 1.6, marginBottom: 6, textAlign: 'center' }}>
+            Te enviamos un link de confirmación a
+          </div>
+          <div style={{ fontFamily: SK.fMono, fontSize: 13, color: SK.gold, fontWeight: 600, marginBottom: 16, textAlign: 'center' }}>
+            {cleanEmail || email}
+          </div>
+          <div style={{ fontSize: 12, color: SK.textMute, lineHeight: 1.7, marginBottom: 28, textAlign: 'center' }}>
+            Haz clic en el enlace del correo para activar tu cuenta.{'\n'}
+            Revisa también la carpeta de <strong style={{ color: SK.text }}>spam</strong> si no lo ves.
+          </div>
+
+          <button onClick={onLogin} style={{
+            width: '100%', padding: '14px 0', background: SK.gold, color: SK.bg,
+            border: 'none', borderRadius: 10,
+            fontFamily: SK.fHead, fontWeight: 700, fontSize: 14,
+            textTransform: 'uppercase', letterSpacing: 1.2, cursor: 'pointer',
+          }}>Ir al inicio de sesión</button>
         </div>
-        <div style={{ fontSize: 13, color: SK.textMute, lineHeight: 1.6, marginBottom: 6, textAlign: 'center' }}>
-          Te enviamos un link de confirmación a
-        </div>
-        <div style={{ fontFamily: SK.fMono, fontSize: 13, color: SK.gold, fontWeight: 600, marginBottom: 20, textAlign: 'center' }}>
-          {email}
-        </div>
-        <div style={{ fontSize: 12, color: SK.textMute, lineHeight: 1.6, marginBottom: 28, textAlign: 'center' }}>
-          Haz clic en el enlace del correo para activar tu cuenta. Revisa también la carpeta de spam si no lo ves.
-        </div>
-        <button onClick={onLogin} style={{
-          width: '100%', padding: '14px 0', background: SK.gold, color: SK.bg,
-          border: 'none', borderRadius: 10,
-          fontFamily: SK.fHead, fontWeight: 700, fontSize: 14,
-          textTransform: 'uppercase', letterSpacing: 1.2, cursor: 'pointer',
-        }}>Ir al inicio de sesión</button>
       </div>
     </PhoneShell>
   );
