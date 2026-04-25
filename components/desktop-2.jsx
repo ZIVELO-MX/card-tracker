@@ -361,6 +361,11 @@ function RegisterDesktop({ onRegister, onLogin }) {
       return;
     }
 
+    if (pwd.length < 6) {
+      setErrMsg('La contraseña debe tener al menos 6 caracteres.');
+      return;
+    }
+
     setIsSubmitting(true);
     const cleanName     = normalizeText(name);
     const cleanUsername = normalizeText(username).replace(/\s+/g, '').toLowerCase();
@@ -408,7 +413,7 @@ function RegisterDesktop({ onRegister, onLogin }) {
       if (error) {
         const msg = error.message || '';
         if (msg.toLowerCase().includes('already registered')) {
-          setErrMsg('Ese email ya está registrado. Inicia sesión o usa otro.');
+          setErrMsg('Ese email ya está registrado. Inicia sesión o usa otro correo.');
         } else if (msg.toLowerCase().includes('invalid') || msg.toLowerCase().includes('email')) {
           setErrMsg('Revisa el email e intenta de nuevo.');
         } else {
@@ -416,7 +421,15 @@ function RegisterDesktop({ onRegister, onLogin }) {
         }
         return;
       }
+      // Si Supabase retorna user sin identities = email enumeration protection activo
+      // (el email ya existía pero Supabase no revela el error — igual envía un correo)
+      if (data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+        setErrMsg('Ese email ya está registrado. Inicia sesión o usa otro correo.');
+        return;
+      }
       if (data?.user) {
+        // Intentar crear/actualizar el perfil. Si falla por RLS (sin sesión activa),
+        // el perfil se creará via trigger o al primer login. No bloquear el flujo.
         const { error: profileErr } = await window.supabase.from('profiles').upsert({
           id: data.user.id,
           username: cleanUsername,
@@ -428,14 +441,18 @@ function RegisterDesktop({ onRegister, onLogin }) {
         }, { onConflict: 'id' });
         if (profileErr) {
           if (profileErr.code === '23505') {
-            if (profileErr.message?.includes('username')) setErrMsg('Ese usuario ya existe. Elegí otro.');
-            else if (profileErr.message?.includes('phone')) setErrMsg('Ese número ya está registrado.');
-            else setErrMsg('Ya existe una cuenta con esos datos.');
-          } else {
-            setErrMsg('No pudimos guardar tu perfil. Intenta de nuevo.');
+            if (profileErr.message?.includes('username')) {
+              setErrMsg('Ese usuario ya existe. Elegí otro.');
+              return;
+            } else if (profileErr.message?.includes('phone')) {
+              setErrMsg('Ese número ya está registrado.');
+              return;
+            }
+            // Otro conflicto único — la cuenta se creó igual, mostrar confirmación
           }
-          return;
+          // Si el error es de permisos (RLS sin sesión activa), no bloquear el flujo
         }
+        // Intentar guardar whatsapp/phone independientemente del resultado del upsert
         if (cleanWhatsapp) {
           await window.supabase
             .from('profiles')
@@ -443,6 +460,7 @@ function RegisterDesktop({ onRegister, onLogin }) {
             .eq('id', data.user.id);
         }
         // Supabase requiere confirmación de email — session es null hasta que confirmen
+        // signUp fue exitoso — el correo de confirmación ya fue enviado por Supabase
         if (!data.session) {
           setEmailSent(true);
           return;
@@ -1064,7 +1082,7 @@ function ResetPasswordDesktop({ onDone }) {
 // ─────────────────────────────────────────────────────────────
 // DESKTOP — Trade (two-column)
 // ─────────────────────────────────────────────────────────────
-function TradeDesktop({ onNav, theme, onToggleTheme, collection = {}, userData, stats = null, tradeOffers = [], onTradeOffersChange = () => {}, userId = null }) {
+function TradeDesktop({ onNav, theme, onToggleTheme, collection = {}, userData, stats = null, tradeOffers = [], onTradeOffersChange = () => {}, userId = null, tradeUser = null, onTradeUserConsumed = () => {} }) {
   const [tab, setTab] = React.useState('scan');
 
   return (
@@ -1092,6 +1110,9 @@ function TradeDesktop({ onNav, theme, onToggleTheme, collection = {}, userData, 
             collection={collection}
             userId={userId}
             onTradeOffersChange={onTradeOffersChange}
+            initialUser={tradeUser}
+            onInitialUserConsumed={onTradeUserConsumed}
+            tradeOffers={tradeOffers}
           />
         )}
         {tab === 'history' && (
@@ -1132,8 +1153,8 @@ function stickerInfoFromId(id) {
   return { num: 0, label: id, country: null, type: 'jugador', subtype: null };
 }
 
-function TradeScanDesktop({ collection = {}, userId = null, onTradeOffersChange = () => {} }) {
-  const [query, setQuery] = React.useState('');
+function TradeScanDesktop({ collection = {}, userId = null, onTradeOffersChange = () => {}, initialUser = null, onInitialUserConsumed = () => {}, tradeOffers = [] }) {
+  const [query, setQuery] = React.useState(initialUser ? `@${initialUser}` : '');
   const [loading, setLoading] = React.useState(false);
   const [partner, setPartner] = React.useState(null);
   const [error, setError] = React.useState(null);
@@ -1141,6 +1162,67 @@ function TradeScanDesktop({ collection = {}, userId = null, onTradeOffersChange 
   const [fromItems, setFromItems] = React.useState([]);
   const [toItems, setToItems] = React.useState([]);
   const [submitting, setSubmitting] = React.useState(false);
+  const [recentPartners, setRecentPartners] = React.useState([]);
+
+  // Calcular los últimos 5 usuarios con quienes se hizo trade (accepted)
+  React.useEffect(() => {
+    if (!userId || !window.supabase?.from) return;
+    const accepted = (tradeOffers || [])
+      .filter(o => o.status === 'accepted' && (o.from_user === userId || o.to_user === userId))
+      .sort((a, b) => new Date(b.updated_at || b.created_at || 0) - new Date(a.updated_at || a.created_at || 0));
+    // IDs únicos del otro usuario, máximo 5
+    const seen = new Set();
+    const partnerIds = [];
+    for (const o of accepted) {
+      const pid = o.from_user === userId ? o.to_user : o.from_user;
+      if (pid && !seen.has(pid)) { seen.add(pid); partnerIds.push(pid); }
+      if (partnerIds.length >= 5) break;
+    }
+    if (partnerIds.length === 0) { setRecentPartners([]); return; }
+    window.supabase.from('profiles')
+      .select('id, username, display_name')
+      .in('id', partnerIds)
+      .then(({ data }) => {
+        if (!data) return;
+        // Preservar el orden (más reciente primero)
+        const byId = Object.fromEntries(data.map(p => [p.id, p]));
+        setRecentPartners(partnerIds.map(id => byId[id]).filter(Boolean));
+      });
+  }, [tradeOffers, userId]);
+
+  // Función compartida de búsqueda por username
+  async function searchUser(username) {
+    if (!window.supabase?.from) return;
+    setLoading(true);
+    setError(null);
+    setPartner(null);
+    try {
+      const { data: profile, error: pErr } = await window.supabase
+        .from('profiles')
+        .select('id, username, display_name')
+        .ilike('username', username)
+        .maybeSingle();
+      if (pErr || !profile) { setError('Usuario no encontrado'); return; }
+      if (profile.id === userId) { setError('Ese usuario eres tú. Busca otro coleccionista.'); return; }
+      const { data: colData } = await window.supabase
+        .from('collections').select('sticker_id, quantity').eq('user_id', profile.id).gte('quantity', 1);
+      const collectionMap = {};
+      (colData || []).forEach(r => { collectionMap[r.sticker_id] = r.quantity; });
+      const duplicates = (colData || []).filter(r => r.quantity >= 2).map(r => ({ id: r.sticker_id, qty: r.quantity, ...stickerInfoFromId(r.sticker_id) }));
+      setPartner({ id: profile.id, username: profile.username, name: profile.display_name || profile.username, duplicates, collectionMap });
+    } catch {
+      setError('No pudimos completar la búsqueda. Intenta de nuevo.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Auto-buscar cuando viene un usuario desde el link compartido
+  React.useEffect(() => {
+    if (!initialUser) return;
+    onInitialUserConsumed();
+    searchUser(initialUser);
+  }, [initialUser]);
 
   const cleanQuery = query.replace(/^@/, '').replace(/[^a-z0-9_.]/gi, '').toLowerCase().slice(0, 30);
   const canSearch = cleanQuery.length >= 2 && !loading;
@@ -1167,48 +1249,8 @@ function TradeScanDesktop({ collection = {}, userId = null, onTradeOffersChange 
   };
 
   async function handleSearch() {
-    if (!canSearch || !window.supabase?.from) return;
-    setLoading(true);
-    setError(null);
-    setPartner(null);
-    try {
-      const { data: profile, error: pErr } = await window.supabase
-        .from('profiles')
-        .select('id, username, display_name')
-        .ilike('username', cleanQuery)
-        .maybeSingle();
-      if (pErr || !profile) {
-        setError('Usuario no encontrado');
-        return;
-      }
-      if (profile.id === userId) {
-        setError('Ese usuario eres tú. Busca otro coleccionista.');
-        return;
-      }
-      const { data: colData } = await window.supabase
-        .from('collections')
-        .select('sticker_id, quantity')
-        .eq('user_id', profile.id)
-        .gte('quantity', 1);
-
-      const collectionMap = {};
-      (colData || []).forEach(r => { collectionMap[r.sticker_id] = r.quantity; });
-      const partnerDups = (colData || [])
-        .filter(r => r.quantity >= 2)
-        .map(r => ({ id: r.sticker_id, qty: r.quantity, ...stickerInfoFromId(r.sticker_id) }));
-
-      setPartner({
-        id: profile.id,
-        username: profile.username,
-        name: profile.display_name || profile.username,
-        duplicates: partnerDups,
-        collectionMap,
-      });
-    } catch {
-      setError('No pudimos completar la búsqueda. Intenta de nuevo.');
-    } finally {
-      setLoading(false);
-    }
+    if (!canSearch) return;
+    await searchUser(cleanQuery);
   }
 
   async function handlePropose() {
@@ -1238,6 +1280,41 @@ function TradeScanDesktop({ collection = {}, userId = null, onTradeOffersChange 
         <div>
           <div style={{ fontSize: 11, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600, marginBottom: 4 }}>buscar coleccionista</div>
           <div style={{ fontFamily: SK.fHead, fontSize: 22, fontWeight: 700, color: SK.text, marginBottom: 16 }}>Conectar por @usuario</div>
+
+          {/* Accesos rápidos: últimos trades */}
+          {recentPartners.length > 0 && (
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 10, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600, marginBottom: 8 }}>Trades recientes</div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {recentPartners.map(p => (
+                  <button
+                    key={p.id}
+                    onClick={() => { setQuery(`@${p.username}`); searchUser(p.username); }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 7,
+                      padding: '7px 12px',
+                      background: SK.surface, border: `1px solid ${SK.border}`,
+                      borderRadius: 20, cursor: 'pointer',
+                      fontFamily: SK.fMono, fontSize: 12, color: SK.text,
+                      transition: 'border-color 0.15s, background 0.15s',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = SK.gold; e.currentTarget.style.background = SK.bgSoft; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = SK.border; e.currentTarget.style.background = SK.surface; }}
+                  >
+                    <div style={{
+                      width: 22, height: 22, borderRadius: '50%',
+                      background: SK.gold, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 10, fontWeight: 700, color: SK.bg, flexShrink: 0,
+                      fontFamily: SK.fHead,
+                    }}>
+                      {(p.username || '?')[0].toUpperCase()}
+                    </div>
+                    <span>@{p.username}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div style={{ background: SK.surface, border: `1px solid ${SK.border}`, borderRadius: 12, padding: 20, marginBottom: 14 }}>
             <div style={{ fontSize: 13, color: SK.textMute, marginBottom: 12, lineHeight: 1.4 }}>
@@ -1471,15 +1548,9 @@ function ProfileDesktop({ onNav, stats, achievements = [], userData, theme, onTo
           position: 'relative', overflow: 'hidden',
         }}>
           <div style={{ position: 'relative', flexShrink: 0 }}>
-            <div style={{
-              width: 120, height: 120, borderRadius: 60,
-              border: `3px solid ${SK.gold}`,
-              background: SK.bgSoft,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontFamily: SK.fHead, fontSize: 44, fontWeight: 700,
-              color: SK.gold,
-              boxShadow: `0 8px 24px -6px ${SK.goldDeep}`,
-            }}>{initials}</div>
+            <div style={{ border: `3px solid ${SK.gold}`, borderRadius: 60, boxShadow: `0 8px 24px -6px ${SK.goldDeep}` }}>
+              <AvatarBubble userData={user} size={120} />
+            </div>
             {user.country && (
               <div style={{
                 position: 'absolute', bottom: 4, right: 4,
@@ -1523,7 +1594,14 @@ function ProfileDesktop({ onNav, stats, achievements = [], userData, theme, onTo
                 fontFamily: SK.fHead, fontWeight: 700, fontSize: 13,
                 textTransform: 'uppercase', letterSpacing: 1, cursor: 'pointer',
               }}>Editar perfil</button>
-              <button style={{
+              <button onClick={() => {
+                const username = userData?.username;
+                if (!username) return;
+                const base = window.location.origin + window.location.pathname;
+                const link = `${base}#trade=@${username}`;
+                const msg = `¡Hola! Te invito a intercambiar figuritas conmigo en Stickio.\nMirá mis repetidas y proponé un trade aquí: ${link}`;
+                window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+              }} style={{
                 padding: '10px 20px', background: 'transparent', color: SK.text,
                 border: `1px solid ${SK.border}`, borderRadius: 10,
                 fontFamily: SK.fHead, fontWeight: 700, fontSize: 13,

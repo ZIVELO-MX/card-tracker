@@ -411,12 +411,16 @@ async function updateUserProfile(userId, patch = {}) {
   const payload = {
     display_name: String(patch.name || '').trim() || null,
     username,
-    bio: String(patch.bio || '').trim() || null,
-    location: String(patch.location || '').trim() || null,
     phone: phone || null,
     whatsapp: whatsapp || null,
-    updated_at: new Date(),
   };
+
+  // Columnas opcionales: solo se incluyen si la tabla las tiene
+  // (bio, location, updated_at se agregan vía migración SQL)
+  if (patch.bio !== undefined) payload.bio = String(patch.bio || '').trim() || null;
+  if (patch.location !== undefined) payload.location = String(patch.location || '').trim() || null;
+  if (patch.avatar !== undefined) payload.avatar = String(patch.avatar || '').trim() || null;
+  payload.updated_at = new Date().toISOString();
 
   const { data, error } = await window.supabase
     .from('profiles')
@@ -426,8 +430,17 @@ async function updateUserProfile(userId, patch = {}) {
     .single();
 
   if (error) {
-    if (String(error.message || '').toLowerCase().includes('duplicate')) {
+    const errMsg = String(error.message || '').toLowerCase();
+    if (errMsg.includes('duplicate') || errMsg.includes('unique')) {
       return { error, message: 'Ese username o número ya está en uso.' };
+    }
+    if (errMsg.includes('column') && errMsg.includes('does not exist')) {
+      // Reintentar sin las columnas opcionales que podrían no existir aún
+      const safePayload = { display_name: payload.display_name, username: payload.username, phone: payload.phone, whatsapp: payload.whatsapp };
+      const { data: d2, error: e2 } = await window.supabase
+        .from('profiles').update(safePayload).eq('id', userId).select('*').single();
+      if (e2) return { error: e2, message: 'No pudimos guardar el perfil.' };
+      return { data: d2, error: null };
     }
     return { error, message: 'No pudimos guardar el perfil.' };
   }
@@ -470,6 +483,19 @@ function App() {
   const [nav, setNav] = React.useState('home');
   const [userData, setUserData] = React.useState(null);
   const [recoveryMode, setRecoveryMode] = React.useState(false);
+  const [pendingTradeUser, setPendingTradeUser] = React.useState(() => {
+    // Leer el trade pendiente del hash o sessionStorage al cargar
+    try {
+      const hash = window.location.hash || '';
+      const m = hash.match(/[#&]trade=@?([a-z0-9_.]+)/i);
+      if (m) {
+        const u = m[1].toLowerCase();
+        sessionStorage.setItem('stickio_pending_trade', u);
+        return u;
+      }
+      return sessionStorage.getItem('stickio_pending_trade') || null;
+    } catch { return null; }
+  });
   const [theme, setTheme] = React.useState('dark');
   const [albumCountry, setAlbumCountry] = React.useState(null);
   const [collection, setCollection] = React.useState(() => {
@@ -820,7 +846,14 @@ function App() {
     MOBILE_W, MOBILE_H,
   } = window;
 
-  const handleLogin = () => { setScreen('app'); setNav('home'); };
+  const handleLogin = () => {
+    setScreen('app');
+    if (pendingTradeUser) {
+      setNav('trade');
+    } else {
+      setNav('home');
+    }
+  };
   const handleRegister = (data) => { setUserData(data); setScreen('app'); setNav('home'); };
   const handleNav = (id) => {
     setAlbumCountry(null);
@@ -879,7 +912,7 @@ function App() {
       switch (nav) {
         case 'home':        return <DashboardScreen onNav={handleNav} onNavToCountry={handleNavToCountry} stats={stats} collection={collection} activityLog={activityLog} userId={userId} notifications={notifications}/>;
         case 'album':       return <AlbumScreen onNav={handleNav} initialCountry={albumCountry} collection={collection} setCollection={setCollection} onStickerChange={syncSticker}/>;
-        case 'trade':       return <TradeScreen onNav={handleNav} collection={collection} userData={userData} notifications={notifications} tradeOffers={tradeOffers} onTradeOffersChange={setTradeOffers} userId={userId}/>;
+        case 'trade':       return <TradeScreen onNav={handleNav} collection={collection} userData={userData} notifications={notifications} tradeOffers={tradeOffers} onTradeOffersChange={setTradeOffers} userId={userId} tradeUser={pendingTradeUser} onTradeUserConsumed={() => { setPendingTradeUser(null); try { sessionStorage.removeItem('stickio_pending_trade'); window.history.replaceState(null, '', window.location.pathname); } catch {} }}/>
         case 'marketplace': return <MarketplaceScreen onNav={handleNav} userData={userData} collection={collection} notifications={notifications} marketplaceListings={marketplaceListings} onMarketplaceListingsChange={setMarketplaceListings} userId={userId} marketplaceLoading={marketplaceLoading} marketplaceError={marketplaceError}/>;
         case 'profile':     return <ProfileScreen onNav={handleNav} stats={stats} achievements={achievements} userData={userData} onUpdateUser={handleUpdateUser} notifications={notifications} tradeOffers={tradeOffers} userId={userId} collection={collection} activityLog={activityLog}/>;
         default:        return <DashboardScreen onNav={handleNav} onNavToCountry={handleNavToCountry} stats={stats} collection={collection} activityLog={activityLog} userId={userId} notifications={notifications}/>;
@@ -888,7 +921,7 @@ function App() {
     switch (nav) {
       case 'home':        return <DashboardDesktop onNav={handleNav} onNavToCountry={handleNavToCountry} stats={stats} collection={collection} activityLog={activityLog} theme={theme} onToggleTheme={handleToggleTheme} userData={userData} notifications={notifications}/>;
       case 'album':       return <AlbumDesktop onNav={handleNav} initialCountry={albumCountry} theme={theme} onToggleTheme={handleToggleTheme} collection={collection} setCollection={setCollection} onStickerChange={syncSticker} userData={userData} stats={stats} notifications={notifications}/>;
-      case 'trade':       return <TradeDesktop onNav={handleNav} theme={theme} onToggleTheme={handleToggleTheme} collection={collection} userData={userData} stats={stats} notifications={notifications} tradeOffers={tradeOffers} onTradeOffersChange={setTradeOffers} userId={userId}/>;
+      case 'trade':       return <TradeDesktop onNav={handleNav} theme={theme} onToggleTheme={handleToggleTheme} collection={collection} userData={userData} stats={stats} notifications={notifications} tradeOffers={tradeOffers} onTradeOffersChange={setTradeOffers} userId={userId} tradeUser={pendingTradeUser} onTradeUserConsumed={() => { setPendingTradeUser(null); try { sessionStorage.removeItem('stickio_pending_trade'); window.history.replaceState(null, '', window.location.pathname); } catch {} }}/>;
       case 'marketplace': return <MarketplaceDesktop onNav={handleNav} userData={userData} theme={theme} onToggleTheme={handleToggleTheme} collection={collection} stats={stats} notifications={notifications} marketplaceListings={marketplaceListings} onMarketplaceListingsChange={setMarketplaceListings} userId={userId} marketplaceLoading={marketplaceLoading} marketplaceError={marketplaceError}/>;
       case 'profile':     return <ProfileDesktop onNav={handleNav} stats={stats} achievements={achievements} userData={userData} theme={theme} onToggleTheme={handleToggleTheme} onUpdateUser={handleUpdateUser} collection={collection} activityLog={activityLog} notifications={notifications} tradeOffers={tradeOffers} userId={userId}/>;
       case 'admin':       return <AdminDesktop onNav={handleNav} userData={userData} theme={theme} onToggleTheme={handleToggleTheme} fetchStats={fetchAdminStats} stats={stats} notifications={notifications}/>;
