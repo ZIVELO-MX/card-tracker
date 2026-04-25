@@ -263,7 +263,7 @@ function AlbumScreen({ onNav, initialCountry = null, collection = {}, setCollect
                   background: `${SK.gold}22`, border: `1px solid ${SK.gold}55`,
                   borderRadius: 20, padding: '5px 12px', marginBottom: 10,
                 }}>
-                  <span style={{ fontSize: 16 }}>{c.flag}</span>
+                  <FlagImg code={c.code} size={16} />
                   <span style={{ fontFamily: SK.fBody, fontSize: 12, fontWeight: 700, color: SK.gold, textTransform: 'uppercase', letterSpacing: 0.5 }}>{c.name}</span>
                   <button onClick={() => setSelectedCountry(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: SK.gold, fontSize: 14, lineHeight: 1, padding: 0, marginLeft: 2 }}>×</button>
                 </div>
@@ -287,7 +287,7 @@ function AlbumScreen({ onNav, initialCountry = null, collection = {}, setCollect
                       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
                       cursor: 'pointer',
                     }}>
-                      <span style={{ fontSize: 22 }}>{c.flag}</span>
+                      <FlagImg code={c.code} size={22} />
                       <span style={{
                         fontFamily: SK.fBody, fontSize: 9, fontWeight: 600, color: SK.textMute,
                         textTransform: 'uppercase', letterSpacing: 0.3,
@@ -315,6 +315,7 @@ function AlbumScreen({ onNav, initialCountry = null, collection = {}, setCollect
           });
           const haveCount = merged.reduce((acc, s) => acc + (s.count > 0 ? 1 : 0), 0);
           const totalCount = sec.country?.total || sec.total || merged.length;
+          const headerCode = sec.country?.code || null;
           const headerFlag = sec.country?.flag || sec.flag;
           const headerTitle = sec.country?.name || sec.label || 'Especiales';
           if (!filtered.length) return null;
@@ -326,7 +327,9 @@ function AlbumScreen({ onNav, initialCountry = null, collection = {}, setCollect
                 borderRadius: 12, padding: 14, marginBottom: 12,
                 display: 'flex', alignItems: 'center', gap: 12,
               }}>
-                <div style={{ fontSize: 32 }}>{headerFlag}</div>
+                <div style={{ fontSize: 32, lineHeight: 1 }}>
+                  {headerCode ? <FlagImg code={headerCode} size={32} /> : headerFlag}
+                </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontFamily: SK.fHead, fontSize: 18, fontWeight: 700, color: SK.text, textTransform: 'uppercase' }}>
                     {headerTitle}
@@ -815,7 +818,7 @@ function MarketplaceScreen({ onNav, userData, collection = {}, marketplaceListin
 // ─────────────────────────────────────────────────────────────
 // SCREEN 4 — Trade
 // ─────────────────────────────────────────────────────────────
-function TradeScreen({ onNav, collection = {}, userData = {}, tradeOffers = [], onTradeOffersChange = () => {}, userId = null }) {
+function TradeScreen({ onNav, collection = {}, userData = {}, tradeOffers = [], onTradeOffersChange = () => {}, userId = null, tradeUser = null, onTradeUserConsumed = () => {} }) {
   const [tab, setTab] = React.useState('scan');
   const pendingCount = tradeOffers.filter(o => o.to_user === userId && o.status === 'pending').length;
 
@@ -861,7 +864,7 @@ function TradeScreen({ onNav, collection = {}, userData = {}, tradeOffers = [], 
           </div>
         </div>
 
-        {tab === 'scan'    && <ScanTab collection={collection} userId={userId} onTradeOffersChange={onTradeOffersChange}/>} 
+        {tab === 'scan'    && <ScanTab collection={collection} userId={userId} onTradeOffersChange={onTradeOffersChange} tradeOffers={tradeOffers} tradeUser={tradeUser} onTradeUserConsumed={onTradeUserConsumed}/>} 
         {tab === 'history' && <TradeHistoryMobile tradeOffers={tradeOffers} userId={userId} onTradeOffersChange={onTradeOffersChange}/>} 
       </div>
     </PhoneShell>
@@ -1053,8 +1056,8 @@ function stickerMeta(id) {
   return { flag: '⭐', id, pos: '', name: '' };
 }
 
-function ScanTab({ collection = {}, userId = null, onTradeOffersChange = () => {} }) {
-  const [query, setQuery] = React.useState('');
+function ScanTab({ collection = {}, userId = null, onTradeOffersChange = () => {}, tradeOffers = [], tradeUser = null, onTradeUserConsumed = () => {} }) {
+  const [query, setQuery] = React.useState(tradeUser ? `@${tradeUser}` : '');
   const [loading, setLoading] = React.useState(false);
   const [partner, setPartner] = React.useState(null);
   const [error, setError] = React.useState(null);
@@ -1062,30 +1065,34 @@ function ScanTab({ collection = {}, userId = null, onTradeOffersChange = () => {
   const [fromItems, setFromItems] = React.useState([]);
   const [toItems, setToItems] = React.useState([]);
   const [submitting, setSubmitting] = React.useState(false);
+  const [recentPartners, setRecentPartners] = React.useState([]);
 
   const cleanQuery = query.replace(/^@/, '').replace(/[^a-z0-9_.]/gi, '').toLowerCase().slice(0, 30);
   const canSearch = cleanQuery.length >= 2 && !loading;
 
-  const myDuplicates = React.useMemo(() =>
-    Object.entries(collection).filter(([, qty]) => qty >= 2).map(([id, qty]) => ({ id, qty })),
-    [collection]
-  );
+  // Calcular últimos 5 partners con trades aceptados
+  React.useEffect(() => {
+    if (!userId || !window.supabase?.from) return;
+    const accepted = (tradeOffers || [])
+      .filter(o => o.status === 'accepted' && (o.from_user === userId || o.to_user === userId))
+      .sort((a, b) => new Date(b.updated_at || b.created_at || 0) - new Date(a.updated_at || a.created_at || 0));
+    const seen = new Set();
+    const partnerIds = [];
+    for (const o of accepted) {
+      const pid = o.from_user === userId ? o.to_user : o.from_user;
+      if (pid && !seen.has(pid)) { seen.add(pid); partnerIds.push(pid); }
+      if (partnerIds.length >= 5) break;
+    }
+    if (partnerIds.length === 0) { setRecentPartners([]); return; }
+    window.supabase.from('profiles').select('id, username, display_name').in('id', partnerIds)
+      .then(({ data }) => {
+        if (!data) return;
+        const byId = Object.fromEntries(data.map(p => [p.id, p]));
+        setRecentPartners(partnerIds.map(id => byId[id]).filter(Boolean));
+      });
+  }, [tradeOffers, userId]);
 
-  // Estampas que el partner tiene y yo NO tengo (no solo sus repetidas)
-  const needFromPartner = React.useMemo(() => {
-    if (!partner) return [];
-    return Object.entries(partner.collectionMap || {})
-      .filter(([id]) => (collection[id] || 0) === 0)
-      .map(([id, qty]) => ({ id, qty }));
-  }, [partner, collection]);
-
-  // Mis repetidas que el partner NO tiene
-  const theyNeedFromMe = React.useMemo(() => {
-    if (!partner) return [];
-    return myDuplicates.filter(d => (partner.collectionMap?.[d.id] || 0) === 0);
-  }, [myDuplicates, partner]);
-
-   async function handleUsernameSearch(raw = cleanQuery) {
+  async function handleUsernameSearch(raw = cleanQuery) {
     const clean = (raw || '').replace(/^@/, '').replace(/[^a-z0-9_.]/gi, '').toLowerCase().slice(0, 30);
     if (!clean || !window.supabase?.from) return;
     setLoading(true);
@@ -1124,6 +1131,28 @@ function ScanTab({ collection = {}, userId = null, onTradeOffersChange = () => {
     }
   }
 
+  const myDuplicates = React.useMemo(() =>
+    Object.entries(collection).filter(([, qty]) => qty >= 2).map(([id, qty]) => ({ id, qty })),
+    [collection]
+  );
+  const needFromPartner = React.useMemo(() => {
+    if (!partner) return [];
+    return Object.entries(partner.collectionMap || {})
+      .filter(([id]) => (collection[id] || 0) === 0)
+      .map(([id, qty]) => ({ id, qty }));
+  }, [partner, collection]);
+  const theyNeedFromMe = React.useMemo(() => {
+    if (!partner) return [];
+    return myDuplicates.filter(d => (partner.collectionMap?.[d.id] || 0) === 0);
+  }, [myDuplicates, partner]);
+
+  // Auto-buscar cuando viene usuario desde deep link
+  React.useEffect(() => {
+    if (!tradeUser) return;
+    onTradeUserConsumed();
+    handleUsernameSearch(tradeUser);
+  }, [tradeUser]);
+
   const togglePick = (setList, id) => setList(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
 
   async function handlePropose() {
@@ -1148,6 +1177,38 @@ function ScanTab({ collection = {}, userId = null, onTradeOffersChange = () => {
 
   return (
     <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+      {/* Accesos rápidos: últimos trades */}
+      {recentPartners.length > 0 && (
+        <div>
+          <div style={{ fontSize: 10, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600, marginBottom: 8 }}>Trades recientes</div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {recentPartners.map(p => (
+              <button
+                key={p.id}
+                onClick={() => { setQuery(`@${p.username}`); handleUsernameSearch(p.username); }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '6px 12px',
+                  background: SK.surface, border: `1px solid ${SK.border}`,
+                  borderRadius: 20, cursor: 'pointer',
+                  fontFamily: SK.fMono, fontSize: 12, color: SK.text,
+                }}
+              >
+                <div style={{
+                  width: 20, height: 20, borderRadius: '50%',
+                  background: SK.gold, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 10, fontWeight: 700, color: SK.bg, flexShrink: 0, fontFamily: SK.fHead,
+                }}>
+                  {(p.username || '?')[0].toUpperCase()}
+                </div>
+                <span>@{p.username}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div style={{ background: SK.surface, border: `1px solid ${SK.border}`, borderRadius: 12, padding: 14 }}>
         <div style={{ fontSize: 12, color: SK.textMute, marginBottom: 8 }}>Busca por @usuario para iniciar un intercambio:</div>
         <div style={{ display: 'flex', gap: 8 }}>
@@ -1521,6 +1582,21 @@ function ProfileScreen({ onNav, stats, achievements = [], userData, onUpdateUser
               textTransform: 'uppercase', letterSpacing: 1,
               cursor: 'pointer',
             }}>Editar perfil</button>
+            <button onClick={() => {
+              const username = userData?.username;
+              if (!username) return;
+              const base = window.location.origin + window.location.pathname;
+              const link = `${base}#trade=@${username}`;
+              const msg = `¡Hola! Te invito a intercambiar figuritas conmigo en Stickio.\nMirá mis repetidas y proponé un trade aquí: ${link}`;
+              window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+            }} style={{
+              width: '100%', padding: '12px 0',
+              background: 'transparent', color: SK.text,
+              border: `1px solid ${SK.border}`, borderRadius: 10,
+              fontFamily: SK.fHead, fontWeight: 700, fontSize: 13,
+              textTransform: 'uppercase', letterSpacing: 1,
+              cursor: 'pointer',
+            }}>Compartir perfil</button>
             <button onClick={async () => {
               if (!window.confirm('¿Cerrar sesión?')) return;
               if (window.supabase?.auth) await window.supabase.auth.signOut();
