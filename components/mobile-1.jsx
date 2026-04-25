@@ -53,7 +53,7 @@ function PhoneShell({ children, showNav = true, active, onNav }) {
   return (
     <div style={{
       width: MOBILE_W,
-      height: '100dvh',
+      height: '100%',
       minHeight: MOBILE_H,
       background: SK.bg,
       backgroundImage: HEX_PATTERN,
