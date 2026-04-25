@@ -781,7 +781,7 @@ function AlbumDesktop({ onNav, initialCountry = null, theme, onToggleTheme, coll
     ? specialStickers()
     : isCoca
     ? ccStickers()
-    : stickersFor(country, 1);
+    : stickersFor(country);
 
   const getQty = (s) => s.id in collection ? collection[s.id] : 0;
 

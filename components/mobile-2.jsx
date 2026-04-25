@@ -3,17 +3,12 @@
 // ─────────────────────────────────────────────────────────────
 // Generate demo sticker data for a country
 // ─────────────────────────────────────────────────────────────
-function stickersFor(country, startNum) {
+function stickersFor(country) {
   const arr = [];
   for (let i = 0; i < country.total; i++) {
     const num = i + 1; // local 1-20 numbering per country section
-    let state = 'missing';
-    let count = 0;
-    if (i < country.have) {
-      state = 'have';
-      count = 1;
-      if ((num * 7) % 11 === 0) { state = 'duplicate'; count = 2 + (num % 3); }
-    }
+    const state = 'missing';
+    const count = 0;
 
     let type = 'jugador';
     let player = '';
@@ -65,8 +60,8 @@ function specialStickers() {
     num: i,
     player: SPECIAL_NAMES[i] || `FWC ${i}`,
     country: null,
-    state: i < 8 ? 'have' : 'missing',
-    count: 1,
+    state: 'missing',
+    count: 0,
     type: 'especial',
     subtype: SPECIAL_SUBTYPES[i],
   }));
@@ -85,8 +80,8 @@ function ccStickers() {
     num: i + 1,
     player: CC_NAMES[i],
     country: null,
-    state: i < 4 ? 'have' : 'missing',
-    count: 1,
+    state: 'missing',
+    count: 0,
     type: 'especial',
     subtype: i % 2 === 0 ? 'stadium' : 'trophy',
   }));
@@ -110,7 +105,7 @@ function AlbumScreen({ onNav, initialCountry = null, collection = {}, setCollect
     ...COUNTRIES.map((c, i) => ({
       id: c.code,
       country: c,
-      stickers: stickersFor(c, 1 + i * 20),
+      stickers: stickersFor(c),
     })),
     { id: 'cc', label: 'Coca-Cola', flag: '🥤', total: 12, stickers: ccStickers() },
   ];
@@ -411,7 +406,7 @@ function AlbumScreen({ onNav, initialCountry = null, collection = {}, setCollect
 // ─────────────────────────────────────────────────────────────
 // SCREEN 3.5 — Marketplace
 // ─────────────────────────────────────────────────────────────
-function MarketplaceScreen({ onNav, userData, collection = {}, marketplaceListings = [], onMarketplaceListingsChange = () => {}, userId = null }) {
+function MarketplaceScreen({ onNav, userData, collection = {}, marketplaceListings = [], onMarketplaceListingsChange = () => {}, userId = null, marketplaceLoading = false, marketplaceError = null }) {
   const listings = marketplaceListings;
   const feedListings = React.useMemo(() => listings.filter(l => l.status === 'active'), [listings]);
   const [tab, setTab] = React.useState('feed');
@@ -462,7 +457,7 @@ function MarketplaceScreen({ onNav, userData, collection = {}, marketplaceListin
       const num = code ? parseInt(id.slice(code.length), 10) : (parseInt(id.replace(/\D/g, ''), 10) || 0);
       let player = `Estampa #${String(num).padStart(3,'0')}`;
       if (country && window.stickersFor) {
-        const match = window.stickersFor(country, 1).find(s => s.id === id);
+        const match = window.stickersFor(country).find(s => s.id === id);
         if (match && match.player) player = match.player;
       }
       const flag = country?.flag || '';
@@ -504,7 +499,7 @@ function MarketplaceScreen({ onNav, userData, collection = {}, marketplaceListin
     const num = parseInt(numMatch[1], 10);
     const player = raw.replace(/^#?\d+\s*/, '').trim() || `Estampa #${String(num).padStart(3, '0')}`;
     const id = `MANUAL-${num}-${player.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
-    if (!newCards.find(c => c.id === id)) {
+    if (!newCards.find(c => c.num === num)) {
       setNewCards(prev => [...prev, { id, num, player, country: null }]);
     }
     setManualCard('');
@@ -540,7 +535,7 @@ function MarketplaceScreen({ onNav, userData, collection = {}, marketplaceListin
   };
 
   const handleCloseListing = async (listingId) => {
-    const { error } = await window.closeMarketplaceListing(listingId);
+    const { error } = await window.closeMarketplaceListing(listingId, userId);
     if (!error) {
       onMarketplaceListingsChange(prev => (prev || []).map(l =>
         l.id === listingId ? { ...l, status: 'closed', updated_at: new Date().toISOString() } : l
@@ -638,7 +633,13 @@ function MarketplaceScreen({ onNav, userData, collection = {}, marketplaceListin
               })}
             </div>
 
-            {filtered.length === 0 && (
+            {marketplaceLoading && (
+              <div style={{ textAlign: 'center', padding: 32, color: SK.textMute, fontSize: 12 }}>Cargando publicaciones...</div>
+            )}
+            {!marketplaceLoading && marketplaceError && (
+              <div style={{ background: SK.surface, border: `1px dashed ${SK.coral}55`, borderRadius: 12, padding: 24, textAlign: 'center', fontSize: 12, color: SK.coral }}>{marketplaceError}</div>
+            )}
+            {!marketplaceLoading && !marketplaceError && filtered.length === 0 && (
               <div style={{ background: SK.surface, border: `1px dashed ${SK.border}`, borderRadius: 12, padding: 32, textAlign: 'center' }}>
                 <Icon.Store s={32} c={SK.textDim}/>
                 <div style={{ fontFamily: SK.fHead, fontSize: 14, fontWeight: 700, color: SK.textMute, marginTop: 10, textTransform: 'uppercase', letterSpacing: 0.5 }}>Sin publicaciones</div>
@@ -657,14 +658,15 @@ function MarketplaceScreen({ onNav, userData, collection = {}, marketplaceListin
                       </div>
                     ))}
                   </div>
-                  {l.user_id !== userId && (
-                    <div style={{ marginTop: 10, display: 'flex', justifyContent: 'flex-end' }}>
+                  {(l.user_id !== userId && l.userId !== userId) && (
+                    <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                      <span style={{ fontFamily: SK.fMono, fontSize: 11, color: SK.textMute }}>@{l.profile?.username || l.userName || 'usuario'}</span>
                       {contactHrefFor(l) ? (
-                        <a href={contactHrefFor(l)} target="_blank" rel="noopener noreferrer" style={{ fontFamily: SK.fHead, fontSize: 11, fontWeight: 700, letterSpacing: 0.8, textTransform: 'uppercase', color: SK.gold, textDecoration: 'none', border: `1px solid ${SK.gold}55`, borderRadius: 8, padding: '7px 10px' }}>
+                        <a href={contactHrefFor(l)} target="_blank" rel="noopener noreferrer" style={{ fontFamily: SK.fHead, fontSize: 11, fontWeight: 700, letterSpacing: 0.8, textTransform: 'uppercase', color: SK.gold, textDecoration: 'none', border: `1px solid ${SK.gold}55`, borderRadius: 8, padding: '7px 10px', flexShrink: 0 }}>
                           WhatsApp
                         </a>
                       ) : (
-                        <span style={{ fontFamily: SK.fMono, fontSize: 11, color: SK.textMute, userSelect: 'all' }}>@{l.profile?.username || l.userName || 'usuario'}</span>
+                        <span style={{ fontFamily: SK.fBody, fontSize: 11, color: SK.textDim, fontStyle: 'italic' }}>Sin contacto</span>
                       )}
                     </div>
                   )}
@@ -750,6 +752,7 @@ function MarketplaceScreen({ onNav, userData, collection = {}, marketplaceListin
               </div>
 
               {pubError && <div style={{ fontSize: 11, color: SK.coral, marginBottom: 8 }}>{pubError}</div>}
+              {!userId && <div style={{ fontSize: 11, color: SK.textMute, textAlign: 'center', marginBottom: 8 }}>Inicia sesión para publicar</div>}
 
               <button
                 onClick={handlePublish}
@@ -906,6 +909,16 @@ function TradeHistoryMobile({ tradeOffers = [], userId = null, onTradeOffersChan
     </div>
   );
 
+  if (tradeOffers.length === 0) {
+    return (
+      <div style={{ padding: '0 20px 20px' }}>
+        <div style={{ background: SK.surface, border: `1px solid ${SK.border}`, borderRadius: 12 }}>
+          <EmptyState icon="🤝" title="Sin intercambios aún" sub='Buscá un @usuario en "Buscar @" y enviá tu primera propuesta.'/>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       {/* Incoming pending */}
@@ -1058,17 +1071,21 @@ function ScanTab({ collection = {}, userId = null, onTradeOffersChange = () => {
     [collection]
   );
 
+  // Estampas que el partner tiene y yo NO tengo (no solo sus repetidas)
   const needFromPartner = React.useMemo(() => {
     if (!partner) return [];
-    return partner.duplicates.filter(d => (collection[d.id] || 0) === 0);
+    return Object.entries(partner.collectionMap || {})
+      .filter(([id]) => (collection[id] || 0) === 0)
+      .map(([id, qty]) => ({ id, qty }));
   }, [partner, collection]);
 
+  // Mis repetidas que el partner NO tiene
   const theyNeedFromMe = React.useMemo(() => {
     if (!partner) return [];
     return myDuplicates.filter(d => (partner.collectionMap?.[d.id] || 0) === 0);
   }, [myDuplicates, partner]);
 
-  async function handleUsernameSearch(raw = cleanQuery) {
+   async function handleUsernameSearch(raw = cleanQuery) {
     const clean = (raw || '').replace(/^@/, '').replace(/[^a-z0-9_.]/gi, '').toLowerCase().slice(0, 30);
     if (!clean || !window.supabase?.from) return;
     setLoading(true);
@@ -1078,7 +1095,7 @@ function ScanTab({ collection = {}, userId = null, onTradeOffersChange = () => {
       const { data: profile, error: pErr } = await window.supabase
         .from('profiles')
         .select('id, username, display_name')
-        .ilike('username', clean)
+        .ilike('username', `%${clean}%`)
         .maybeSingle();
       if (pErr || !profile) {
         setError('Usuario no encontrado');
@@ -1170,8 +1187,8 @@ function ScanTab({ collection = {}, userId = null, onTradeOffersChange = () => {
           </div>
           <button
             onClick={() => setModalOpen(true)}
-            disabled={!needFromPartner.length || !theyNeedFromMe.length || !userId}
-            style={{ width: '100%', marginTop: 10, background: (!needFromPartner.length || !theyNeedFromMe.length || !userId) ? SK.border : SK.gold, color: (!needFromPartner.length || !theyNeedFromMe.length || !userId) ? SK.textMute : SK.bg, border: 'none', borderRadius: 8, padding: '10px 12px', fontFamily: SK.fHead, fontWeight: 700, fontSize: 12, textTransform: 'uppercase' }}
+            disabled={!userId || !partner?.id}
+            style={{ width: '100%', marginTop: 10, background: (!userId || !partner?.id) ? SK.border : SK.gold, color: (!userId || !partner?.id) ? SK.textMute : SK.bg, border: 'none', borderRadius: 8, padding: '10px 12px', fontFamily: SK.fHead, fontWeight: 700, fontSize: 12, textTransform: 'uppercase' }}
           >Proponer intercambio</button>
         </div>
       )}
@@ -1206,13 +1223,18 @@ function ScanTab({ collection = {}, userId = null, onTradeOffersChange = () => {
 
             {/* Lists */}
             <div style={{ flex: 1, overflow: 'auto', padding: '10px 16px' }}>
-              {/* Ofreces — tus repetidas que le faltan al partner */}
+              {/* Ofreces — tus repetidas que le faltan al partner. Si no hay repetidas, muestra todas tus estampas */}
               <div style={{ marginBottom: 14 }}>
                 <div style={{ fontSize: 10, color: SK.coral, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700, marginBottom: 6 }}>
-                  Ofreces ({fromItems.length}/{theyNeedFromMe.length} seleccionadas)
+                  Ofreces ({fromItems.length}/{theyNeedFromMe.length || myDuplicates.length || Object.keys(collection).length} seleccionadas)
                 </div>
+                {theyNeedFromMe.length === 0 && (
+                  <div style={{ fontSize: 11, color: SK.textMute, background: SK.bgSoft, border: `1px solid ${SK.border}`, borderRadius: 10, padding: '10px 12px', marginBottom: 8 }}>
+                    No tienes repetidas que le falten al partner. Puedes ofrecer cualquier estampa.
+                  </div>
+                )}
                 <div style={{ background: SK.bgSoft, border: `1px solid ${SK.border}`, borderRadius: 10, overflow: 'hidden' }}>
-                  {theyNeedFromMe.map((d, i, a) => {
+                  {(theyNeedFromMe.length > 0 ? theyNeedFromMe : myDuplicates.length > 0 ? myDuplicates : Object.entries(collection).map(([id, qty]) => ({ id, qty }))).map((d, i, a) => {
                     const m = stickerMeta(d.id);
                     const checked = fromItems.includes(d.id);
                     return (
@@ -1235,14 +1257,24 @@ function ScanTab({ collection = {}, userId = null, onTradeOffersChange = () => {
                       </label>
                     );
                   })}
+                  {Object.keys(collection).length === 0 && (
+                    <div style={{ padding: '14px 12px', fontSize: 12, color: SK.textMute, textAlign: 'center' }}>
+                      No tienes estampas en tu colección aún.
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Solicitas — repetidas del partner que te faltan */}
+              {/* Solicitas — estampas del partner que te faltan */}
               <div style={{ marginBottom: 10 }}>
                 <div style={{ fontSize: 10, color: SK.green, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700, marginBottom: 6 }}>
                   Recibirás ({toItems.length}/{needFromPartner.length} seleccionadas)
                 </div>
+                {needFromPartner.length === 0 && (
+                  <div style={{ fontSize: 11, color: SK.textMute, background: SK.bgSoft, border: `1px solid ${SK.border}`, borderRadius: 10, padding: '10px 12px' }}>
+                    No tienes estampas faltantes que este usuario tenga disponibles.
+                  </div>
+                )}
                 <div style={{ background: SK.bgSoft, border: `1px solid ${SK.border}`, borderRadius: 10, overflow: 'hidden' }}>
                   {needFromPartner.map((d, i, a) => {
                     const m = stickerMeta(d.id);
@@ -1719,46 +1751,5 @@ function Badge({ label, desc, unlocked, icon, locked }) {
   );
 }
 
-function FoilSticker({ num, country }) {
-  return (
-    <div style={{
-      position: 'relative',
-      aspectRatio: '0.72',
-      borderRadius: 8,
-      padding: 2,
-      background: `conic-gradient(from 45deg, ${SK.gold}, ${SK.goldDeep}, ${SK.gold}cc, ${SK.goldDeep}, ${SK.gold})`,
-      boxShadow: `0 4px 16px -4px ${SK.goldDeep}`,
-    }}>
-      <div style={{
-        width: '100%', height: '100%',
-        background: SK.surface, borderRadius: 6,
-        padding: 8, display: 'flex', flexDirection: 'column',
-        position: 'relative', overflow: 'hidden',
-      }}>
-        {/* Shine */}
-        <div style={{
-          position: 'absolute', top: 0, left: 0, right: 0, height: '50%',
-          background: `linear-gradient(180deg, ${SK.gold}18 0%, transparent 100%)`,
-          pointerEvents: 'none',
-        }}/>
-        <div style={{
-          fontFamily: SK.fMono, fontSize: 10, fontWeight: 700,
-          color: SK.gold, letterSpacing: 0.5,
-        }}>★ FOIL</div>
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <StickerArt seed={num} countryColor={country.color}/>
-        </div>
-        <div style={{
-          fontFamily: SK.fHead, fontSize: 11, fontWeight: 700,
-          color: SK.text, textTransform: 'uppercase', letterSpacing: 0.5,
-          display: 'flex', alignItems: 'center', gap: 4,
-        }}>
-          <span>{country.flag}</span>
-          <span style={{ fontFamily: SK.fMono, color: SK.gold, fontSize: 10 }}>#{String(num).padStart(3, '0')}</span>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 Object.assign(window, { AlbumScreen, TradeScreen, ProfileScreen, MarketplaceScreen, stickersFor, specialStickers, ccStickers });
