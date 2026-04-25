@@ -376,7 +376,7 @@ function MarketplaceNew({ userData, collection = {}, onPublish, publishing = fal
       const num = code ? parseInt(id.slice(code.length), 10) : (parseInt(id.replace(/\D/g, ''), 10) || 0);
       let player = `Estampa #${String(num).padStart(3,'0')}`;
       if (country && window.stickersFor) {
-        const match = window.stickersFor(country, 1).find(s => s.id === id);
+        const match = window.stickersFor(country).find(s => s.id === id);
         if (match && match.player) player = match.player;
       }
       const flag = country?.flag || '';

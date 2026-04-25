@@ -1074,7 +1074,7 @@ function ScanTab({ collection = {}, userId = null, onTradeOffersChange = () => {
     return myDuplicates.filter(d => (partner.collectionMap?.[d.id] || 0) === 0);
   }, [myDuplicates, partner]);
 
-  async function handleUsernameSearch(raw = cleanQuery) {
+   async function handleUsernameSearch(raw = cleanQuery) {
     const clean = (raw || '').replace(/^@/, '').replace(/[^a-z0-9_.]/gi, '').toLowerCase().slice(0, 30);
     if (!clean || !window.supabase?.from) return;
     setLoading(true);
@@ -1084,7 +1084,7 @@ function ScanTab({ collection = {}, userId = null, onTradeOffersChange = () => {
       const { data: profile, error: pErr } = await window.supabase
         .from('profiles')
         .select('id, username, display_name')
-        .ilike('username', clean)
+        .ilike('username', `%${clean}%`)
         .maybeSingle();
       if (pErr || !profile) {
         setError('Usuario no encontrado');
@@ -1725,46 +1725,5 @@ function Badge({ label, desc, unlocked, icon, locked }) {
   );
 }
 
-function FoilSticker({ num, country }) {
-  return (
-    <div style={{
-      position: 'relative',
-      aspectRatio: '0.72',
-      borderRadius: 8,
-      padding: 2,
-      background: `conic-gradient(from 45deg, ${SK.gold}, ${SK.goldDeep}, ${SK.gold}cc, ${SK.goldDeep}, ${SK.gold})`,
-      boxShadow: `0 4px 16px -4px ${SK.goldDeep}`,
-    }}>
-      <div style={{
-        width: '100%', height: '100%',
-        background: SK.surface, borderRadius: 6,
-        padding: 8, display: 'flex', flexDirection: 'column',
-        position: 'relative', overflow: 'hidden',
-      }}>
-        {/* Shine */}
-        <div style={{
-          position: 'absolute', top: 0, left: 0, right: 0, height: '50%',
-          background: `linear-gradient(180deg, ${SK.gold}18 0%, transparent 100%)`,
-          pointerEvents: 'none',
-        }}/>
-        <div style={{
-          fontFamily: SK.fMono, fontSize: 10, fontWeight: 700,
-          color: SK.gold, letterSpacing: 0.5,
-        }}>★ FOIL</div>
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <StickerArt seed={num} countryColor={country.color}/>
-        </div>
-        <div style={{
-          fontFamily: SK.fHead, fontSize: 11, fontWeight: 700,
-          color: SK.text, textTransform: 'uppercase', letterSpacing: 0.5,
-          display: 'flex', alignItems: 'center', gap: 4,
-        }}>
-          <span>{country.flag}</span>
-          <span style={{ fontFamily: SK.fMono, color: SK.gold, fontSize: 10 }}>#{String(num).padStart(3, '0')}</span>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 Object.assign(window, { AlbumScreen, TradeScreen, ProfileScreen, MarketplaceScreen, stickersFor, specialStickers, ccStickers });
