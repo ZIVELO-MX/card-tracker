@@ -10,8 +10,8 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="img/stickio-favicon.svg" type="image/svg+xml">
 <link rel="icon" href="img/stickio-favicon.png" type="image/png">
-<link rel="apple-touch-icon" href="img/stickio-app-icon.svg">
-<link rel="apple-touch-icon" sizes="180x180" href="img/stickio-favicon.png">
+<link rel="apple-touch-icon" sizes="180x180" href="img/stickio-pwa-icon-512.png">
+<link rel="apple-touch-icon" href="img/stickio-pwa-icon-512.png">
 <link rel="mask-icon" href="img/stickio-favicon.svg" color="#E7B10A">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0A1628">
@@ -336,10 +336,10 @@ async function createMarketplaceListing(userId, listing) {
 
 async function closeMarketplaceListing(listingId, userId) {
   if (!window.supabase?.from) return { error: 'Sin conexión' };
-  const query = window.supabase.from('marketplace_listings')
+  let query = window.supabase.from('marketplace_listings')
     .update({ status: 'closed', updated_at: new Date() })
     .eq('id', listingId);
-  if (userId) query.eq('user_id', userId);
+  if (userId) query = query.eq('user_id', userId);
   const { error } = await query;
   if (!error) logActivity('closed', listingId);
   return { error };
@@ -415,6 +415,7 @@ async function updateUserProfile(userId, patch = {}) {
     location: String(patch.location || '').trim() || null,
     phone: phone || null,
     whatsapp: whatsapp || null,
+    ...(patch.country_code !== undefined && { country_code: patch.country_code || null }),
     updated_at: new Date(),
   };
 
@@ -484,7 +485,7 @@ function App() {
   const achievements = computeAchievements(collection, stats);
   const [adminStats, setAdminStats] = React.useState(null);
   const [activityLog, setActivityLog] = React.useState(() => readActivityLog());
-  const [notifications, setNotifications] = React.useState(() => readNotifications());
+  const [notifications, setNotifications] = React.useState([]);
   const prevStatsRef = React.useRef(null);
   const prevCollectionRef = React.useRef(null);
   const prevAchievementsRef = React.useRef(null);

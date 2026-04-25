@@ -21,7 +21,7 @@ function BottomNav({ active, onNav }) {
       flexShrink: 0,
       background: SK.surface,
       borderTop: `1px solid ${SK.border}`,
-      paddingBottom: 18,
+      paddingBottom: 'env(safe-area-inset-bottom, 8px)',
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-around', padding: '10px 12px 6px' }}>
         {items.map(it => {
@@ -31,11 +31,11 @@ function BottomNav({ active, onNav }) {
             <button key={it.id} onClick={() => onNav(it.id)} style={{
               background: 'none', border: 'none', cursor: 'pointer',
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-              padding: '6px 12px',
+              padding: '8px 12px', minHeight: 44,
             }}>
               <it.Icon s={22} c={c} filled={on}/>
               <span style={{
-                fontFamily: SK.fBody, fontSize: 10, fontWeight: on ? 700 : 500,
+                fontFamily: SK.fBody, fontSize: 11, fontWeight: on ? 700 : 500,
                 color: c, letterSpacing: 0.3, textTransform: 'uppercase',
               }}>{it.label}</span>
             </button>
@@ -62,7 +62,6 @@ function PhoneShell({ children, showNav = true, active, onNav }) {
       overflow: 'hidden',
       position: 'relative',
       paddingTop: 'env(safe-area-inset-top, 0px)',
-      paddingBottom: 'env(safe-area-inset-bottom, 0px)',
     }}>
       <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         {children}
@@ -308,11 +307,11 @@ function LoginScreen({ onLogin, onRegister, onForgot }) {
         </div>
         <div style={{ textAlign: 'center', marginTop: 12 }}>
           <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginBottom: 8 }}>
-            <a href="privacy.html" target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: SK.textDim, textDecoration: 'none', letterSpacing: 0.4 }}>Privacidad</a>
-            <a href="terms.html" target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: SK.textDim, textDecoration: 'none', letterSpacing: 0.4 }}>Términos</a>
+            <a href="privacy.html" target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: SK.textDim, textDecoration: 'none', letterSpacing: 0.4 }}>Privacidad</a>
+            <a href="terms.html" target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: SK.textDim, textDecoration: 'none', letterSpacing: 0.4 }}>Términos</a>
           </div>
-          <div style={{ fontSize: 10, color: SK.textDim, letterSpacing: 0.6, textTransform: 'uppercase' }}>By ZIVELO</div>
-          <div style={{ fontSize: 9, color: SK.textDim, marginTop: 3 }}>© 2026 ZIVELO. All rights reserved.</div>
+          <div style={{ fontSize: 11, color: SK.textDim, letterSpacing: 0.6, textTransform: 'uppercase' }}>By ZIVELO</div>
+          <div style={{ fontSize: 11, color: SK.textDim, marginTop: 3 }}>© {new Date().getFullYear()} ZIVELO. All rights reserved.</div>
         </div>
       </div>
     </PhoneShell>
@@ -336,6 +335,7 @@ function RegisterScreen({ onRegister, onLogin }) {
   const [errMsg, setErrMsg]           = React.useState(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [emailSent, setEmailSent]     = React.useState(false);
+  const [submittedEmail, setSubmittedEmail] = React.useState('');
   const [acceptTerms, setAcceptTerms] = React.useState(false);
   const [acceptPrivacy, setAcceptPrivacy] = React.useState(false);
 
@@ -374,7 +374,12 @@ function RegisterScreen({ onRegister, onLogin }) {
       setErrMsg('No aceptamos emails desechables. Usa un email permanente.');
       return;
     }
-    
+
+    if (pwd.length < 6) {
+      setErrMsg('La contraseña debe tener al menos 6 caracteres.');
+      return;
+    }
+
     const normalizeText = (text) => {
       return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
     };
@@ -469,6 +474,7 @@ function RegisterScreen({ onRegister, onLogin }) {
             .eq('id', data.user.id);
         }
         if (!data.session) {
+          setSubmittedEmail(cleanEmail);
           setEmailSent(true);
           return;
         }
@@ -481,9 +487,9 @@ function RegisterScreen({ onRegister, onLogin }) {
 
   if (emailSent) return (
     <PhoneShell showNav={false}>
-      <div style={{ flex: 1, overflow: 'auto' }}>
+      <div style={{ flex: 1, overflow: 'auto', WebkitOverflowScrolling: 'touch' }}>
         <div style={{ padding: '28px 24px 10px' }}>
-          <div style={{ fontSize: 10, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600 }}>crear cuenta</div>
+          <div style={{ fontSize: 11, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600 }}>crear cuenta</div>
           <div style={{ fontFamily: SK.fHead, fontSize: 26, fontWeight: 700, color: SK.text, marginTop: 4 }}>Regístrate gratis</div>
         </div>
       </div>
@@ -518,7 +524,7 @@ function RegisterScreen({ onRegister, onLogin }) {
             Te enviamos un link de confirmación a
           </div>
           <div style={{ fontFamily: SK.fMono, fontSize: 13, color: SK.gold, fontWeight: 600, marginBottom: 16, textAlign: 'center' }}>
-            {cleanEmail || email}
+            {submittedEmail || email}
           </div>
           <div style={{ fontSize: 12, color: SK.textMute, lineHeight: 1.7, marginBottom: 28, textAlign: 'center' }}>
             Haz clic en el enlace del correo para activar tu cuenta.{'\n'}
@@ -538,9 +544,9 @@ function RegisterScreen({ onRegister, onLogin }) {
 
   return (
     <PhoneShell showNav={false}>
-      <div style={{ flex: 1, overflow: 'auto' }}>
+      <div style={{ flex: 1, overflow: 'auto', WebkitOverflowScrolling: 'touch' }}>
         <div style={{ padding: '28px 24px 10px' }}>
-          <div style={{ fontSize: 10, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600 }}>crear cuenta</div>
+          <div style={{ fontSize: 11, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600 }}>crear cuenta</div>
           <div style={{ fontFamily: SK.fHead, fontSize: 26, fontWeight: 700, color: SK.text, marginTop: 4 }}>Regístrate gratis</div>
         </div>
 
@@ -801,8 +807,8 @@ function RegisterScreen({ onRegister, onLogin }) {
             ¿Ya tienes cuenta? <span onClick={onLogin} style={{ color: SK.gold, fontWeight: 600, cursor: 'pointer' }}>Inicia sesión</span>
           </div>
           <div style={{ textAlign: 'center', marginTop: 12 }}>
-            <div style={{ fontSize: 10, color: SK.textDim, letterSpacing: 0.6, textTransform: 'uppercase' }}>By ZIVELO</div>
-            <div style={{ fontSize: 9, color: SK.textDim, marginTop: 3 }}>© 2026 ZIVELO. All rights reserved.</div>
+            <div style={{ fontSize: 11, color: SK.textDim, letterSpacing: 0.6, textTransform: 'uppercase' }}>By ZIVELO</div>
+            <div style={{ fontSize: 11, color: SK.textDim, marginTop: 3 }}>© {new Date().getFullYear()} ZIVELO. All rights reserved.</div>
           </div>
         </div>
       </div>
@@ -835,9 +841,9 @@ function ResetPasswordRequestScreen({ onBack }) {
 
   return (
     <PhoneShell showNav={false}>
-      <div style={{ flex: 1, overflow: 'auto' }}>
+      <div style={{ flex: 1, overflow: 'auto', WebkitOverflowScrolling: 'touch' }}>
         <div style={{ padding: '28px 24px 10px' }}>
-          <div style={{ fontSize: 10, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600 }}>reestablecer</div>
+          <div style={{ fontSize: 11, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600 }}>reestablecer</div>
           <div style={{ fontFamily: SK.fHead, fontSize: 26, fontWeight: 700, color: SK.text, marginTop: 4 }}>Recuperar contraseña</div>
         </div>
 
@@ -944,10 +950,10 @@ function DashboardScreen({ onNav, onNavToCountry, stats, collection = {}, activi
 
   return (
     <PhoneShell active="home" onNav={onNav}>
-      <div style={{ flex: 1, overflow: 'auto', paddingBottom: 90 }}>
+      <div style={{ flex: 1, overflow: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 100px)' }}>
         {/* Header */}
         <div style={{
-          padding: '4px 20px 12px',
+          padding: '10px 20px 12px',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}>
           <Logo size={24}/>
@@ -957,7 +963,7 @@ function DashboardScreen({ onNav, onNavToCountry, stats, collection = {}, activi
             }}
             style={{
               background: SK.surface, border: `1px solid ${SK.border}`,
-              width: 40, height: 40, borderRadius: 20,
+              width: 44, height: 44, borderRadius: 22,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               position: 'relative', cursor: 'pointer',
             }}
@@ -991,8 +997,8 @@ function DashboardScreen({ onNav, onNavToCountry, stats, collection = {}, activi
               style={{
                 position: 'absolute', bottom: 0, left: 0, right: 0,
                 background: SK.surface, borderRadius: '16px 16px 0 0',
-                maxHeight: '70vh', overflowY: 'auto',
-                padding: '16px 0 32px',
+                maxHeight: '70vh', overflowY: 'auto', WebkitOverflowScrolling: 'touch',
+                padding: `16px 0 calc(env(safe-area-inset-bottom, 0px) + 24px)`,
                 borderTop: `1px solid ${SK.border}`,
               }}
             >
@@ -1120,7 +1126,7 @@ function DashboardScreen({ onNav, onNavToCountry, stats, collection = {}, activi
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           }}>
             <div>
-              <div style={{ fontSize: 10, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600 }}>continúa coleccionando</div>
+              <div style={{ fontSize: 11, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600 }}>continúa coleccionando</div>
               <div style={{ fontFamily: SK.fHead, fontSize: 20, fontWeight: 700, color: SK.text, marginTop: 2 }}>Por selección</div>
             </div>
             <button onClick={() => onNav('album')} style={{ background: 'none', border: 'none', color: SK.gold, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 2, fontSize: 12, fontWeight: 600 }}>
@@ -1139,7 +1145,7 @@ function DashboardScreen({ onNav, onNavToCountry, stats, collection = {}, activi
 
         {/* Activity feed */}
         <div style={{ padding: '0 20px 16px' }}>
-          <div style={{ fontSize: 10, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600, marginBottom: 4 }}>actividad reciente</div>
+          <div style={{ fontSize: 11, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600, marginBottom: 4 }}>actividad reciente</div>
           <div style={{ fontFamily: SK.fHead, fontSize: 20, fontWeight: 700, color: SK.text, marginBottom: 12 }}>Últimos movimientos</div>
           <div style={{ background: SK.surface, border: `1px solid ${SK.border}`, borderRadius: 12, overflow: 'hidden' }}>
             {activityLog.length === 0 ? (
@@ -1157,17 +1163,6 @@ function DashboardScreen({ onNav, onNavToCountry, stats, collection = {}, activi
         </div>
       </div>
 
-      {/* FAB */}
-      <button onClick={() => onNav('album')} style={{
-        position: 'absolute', right: 20, bottom: 96,
-        width: 56, height: 56, borderRadius: 28,
-        background: SK.gold, border: 'none',
-        boxShadow: `0 8px 24px -4px ${SK.goldDeep}, 0 0 0 6px ${SK.gold}22`,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        cursor: 'pointer', zIndex: 10,
-      }}>
-        <Icon.Plus s={26} c={SK.bg}/>
-      </button>
     </PhoneShell>
   );
 }
@@ -1199,7 +1194,7 @@ function StatCard({ label, value, color, IconC }) {
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
         <IconC s={12} c={color}/>
-        <span style={{ fontSize: 10, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 600 }}>{label}</span>
+        <span style={{ fontSize: 11, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 0.8, fontWeight: 600 }}>{label}</span>
       </div>
       <div style={{ fontFamily: SK.fMono, fontSize: 26, fontWeight: 700, color, letterSpacing: -0.5, lineHeight: 1 }}>{value}</div>
     </div>
@@ -1273,6 +1268,7 @@ function ResetPasswordScreen({ onDone }) {
     setErrMsg(null);
     setInfoMsg(null);
     if (!pwd || !confirm) { setErrMsg('Completa ambos campos.'); return; }
+    if (pwd.length < 6) { setErrMsg('La contraseña debe tener al menos 6 caracteres.'); return; }
     if (!match) { setErrMsg('Las contraseñas no coinciden.'); return; }
     if (!window.supabase?.auth) { setErrMsg('Supabase no está configurado.'); return; }
     const { error } = await window.supabase.auth.updateUser({ password: pwd });
@@ -1283,9 +1279,9 @@ function ResetPasswordScreen({ onDone }) {
 
   return (
     <PhoneShell showNav={false}>
-      <div style={{ flex: 1, overflow: 'auto' }}>
+      <div style={{ flex: 1, overflow: 'auto', WebkitOverflowScrolling: 'touch' }}>
         <div style={{ padding: '28px 24px 10px' }}>
-          <div style={{ fontSize: 10, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600 }}>nueva contraseña</div>
+          <div style={{ fontSize: 11, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600 }}>nueva contraseña</div>
           <div style={{ fontFamily: SK.fHead, fontSize: 26, fontWeight: 700, color: SK.text, marginTop: 4 }}>Reestablecer</div>
         </div>
 

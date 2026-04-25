@@ -310,7 +310,7 @@ function LoginDesktop({ onLogin, onRegister, onForgot }) {
             <a href="terms.html" target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: SK.textDim, textDecoration: 'none', letterSpacing: 0.4 }}>Términos</a>
           </div>
           <div style={{ fontSize: 11, color: SK.textDim, letterSpacing: 0.6, textTransform: 'uppercase' }}>By ZIVELO</div>
-          <div style={{ fontSize: 10, color: SK.textDim, marginTop: 4 }}>© 2026 ZIVELO. All rights reserved.</div>
+          <div style={{ fontSize: 10, color: SK.textDim, marginTop: 4 }}>© {new Date().getFullYear()} ZIVELO. All rights reserved.</div>
         </div>
       </div>
     </div>
@@ -334,6 +334,7 @@ function RegisterDesktop({ onRegister, onLogin }) {
   const [errMsg, setErrMsg]           = React.useState(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [emailSent, setEmailSent]     = React.useState(false);
+  const [submittedEmail, setSubmittedEmail] = React.useState('');
   const [acceptTerms, setAcceptTerms] = React.useState(false);
   const [acceptPrivacy, setAcceptPrivacy] = React.useState(false);
 
@@ -358,6 +359,11 @@ function RegisterDesktop({ onRegister, onLogin }) {
     const blockedDomains = ['tempmail.com', '10minutemail.com', 'guerrillamail.com', 'mailinator.com', 'throwaway.email'];
     if (blockedDomains.includes(cleanEmail.split('@')[1]?.toLowerCase())) {
       setErrMsg('No aceptamos emails desechables. Usa un email permanente.');
+      return;
+    }
+
+    if (pwd.length < 6) {
+      setErrMsg('La contraseña debe tener al menos 6 caracteres.');
       return;
     }
 
@@ -444,6 +450,7 @@ function RegisterDesktop({ onRegister, onLogin }) {
         }
         // Supabase requiere confirmación de email — session es null hasta que confirmen
         if (!data.session) {
+          setSubmittedEmail(cleanEmail);
           setEmailSent(true);
           return;
         }
@@ -499,7 +506,7 @@ function RegisterDesktop({ onRegister, onLogin }) {
           Te enviamos un link de confirmación a
         </div>
         <div style={{ fontFamily: SK.fMono, fontSize: 15, color: SK.gold, fontWeight: 600, marginBottom: 20 }}>
-          {cleanEmail || email}
+          {submittedEmail || email}
         </div>
         <div style={{ fontSize: 13, color: SK.textMute, lineHeight: 1.7, marginBottom: 36 }}>
           Haz clic en el enlace del correo para activar tu cuenta.
@@ -874,7 +881,7 @@ function RegisterDesktop({ onRegister, onLogin }) {
             <a href="terms.html" target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: SK.textDim, textDecoration: 'none', letterSpacing: 0.4 }}>Términos</a>
           </div>
           <div style={{ fontSize: 11, color: SK.textDim, letterSpacing: 0.6, textTransform: 'uppercase' }}>By ZIVELO</div>
-          <div style={{ fontSize: 10, color: SK.textDim, marginTop: 4 }}>© 2026 ZIVELO. All rights reserved.</div>
+          <div style={{ fontSize: 10, color: SK.textDim, marginTop: 4 }}>© {new Date().getFullYear()} ZIVELO. All rights reserved.</div>
         </div>
       </div>
     </div>
@@ -979,6 +986,7 @@ function ResetPasswordDesktop({ onDone }) {
     setErrMsg(null);
     setInfoMsg(null);
     if (!pwd || !confirm) { setErrMsg('Completa ambos campos.'); return; }
+    if (pwd.length < 6) { setErrMsg('La contraseña debe tener al menos 6 caracteres.'); return; }
     if (!match) { setErrMsg('Las contraseñas no coinciden.'); return; }
     if (!window.supabase?.auth) { setErrMsg('Supabase no está configurado.'); return; }
     const { error } = await window.supabase.auth.updateUser({ password: pwd });
@@ -1460,6 +1468,13 @@ function ProfileDesktop({ onNav, stats, achievements = [], userData, theme, onTo
     <>
     <DesktopShell active="profile" onNav={onNav} title="Perfil" sub="Tu identidad de coleccionista" theme={theme} onToggleTheme={onToggleTheme} userData={userData}>
       <div style={{ padding: '28px 36px' }}>
+        {!userData && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, padding: '60px 0', color: SK.textMute, fontSize: 14 }}>
+            <LoadingSpinner size={20}/>
+            Cargando perfil...
+          </div>
+        )}
+        {userData && (<>
         {/* Hero card */}
         <div style={{
           background: SK.surface,
@@ -1523,7 +1538,15 @@ function ProfileDesktop({ onNav, stats, achievements = [], userData, theme, onTo
                 fontFamily: SK.fHead, fontWeight: 700, fontSize: 13,
                 textTransform: 'uppercase', letterSpacing: 1, cursor: 'pointer',
               }}>Editar perfil</button>
-              <button style={{
+              <button onClick={async () => {
+                const url = window.location.href;
+                const text = `Mirá mi colección Stickio: @${safeUsername}`;
+                if (navigator.share) {
+                  try { await navigator.share({ title: 'Mi perfil Stickio', text, url }); } catch (_) {}
+                } else {
+                  try { await navigator.clipboard.writeText(url); alert('Enlace copiado al portapapeles.'); } catch (_) { alert(url); }
+                }
+              }} style={{
                 padding: '10px 20px', background: 'transparent', color: SK.text,
                 border: `1px solid ${SK.border}`, borderRadius: 10,
                 fontFamily: SK.fHead, fontWeight: 700, fontSize: 13,
@@ -1599,7 +1622,18 @@ function ProfileDesktop({ onNav, stats, achievements = [], userData, theme, onTo
               </div>
             )}
           </div>
+
+          {/* Footer legal */}
+          <div style={{ padding: '24px 0 12px', textAlign: 'center', borderTop: `1px solid ${SK.border}`, marginTop: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 18, marginBottom: 8 }}>
+              <a href="privacy.html" target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: SK.textDim, textDecoration: 'none', letterSpacing: 0.4 }}>Privacidad</a>
+              <a href="terms.html" target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: SK.textDim, textDecoration: 'none', letterSpacing: 0.4 }}>Términos</a>
+            </div>
+            <div style={{ fontSize: 11, color: SK.textDim, letterSpacing: 0.6, textTransform: 'uppercase' }}>By ZIVELO</div>
+            <div style={{ fontSize: 11, color: SK.textDim, marginTop: 3 }}>© {new Date().getFullYear()} ZIVELO. All rights reserved.</div>
+          </div>
         </div>
+        </>)}
       </div>
     </DesktopShell>
     <EditProfileModal
