@@ -6,7 +6,7 @@ window.MOBILE_W = MOBILE_W;
 window.MOBILE_H = MOBILE_H;
 
 // ─────────────────────────────────────────────────────────────
-// Bottom nav — hamburger drawer
+// Top nav — hamburger drawer
 // ─────────────────────────────────────────────────────────────
 function BottomNav({ active, onNav }) {
   const [open, setOpen] = React.useState(false);
@@ -29,31 +29,17 @@ function BottomNav({ active, onNav }) {
     }}/>
   );
 
-  const bar = (
+  const topBar = (
     <div style={{
-      flexShrink: 0,
-      background: SK.surface,
-      borderTop: `1px solid ${SK.border}`,
-      paddingBottom: 'env(safe-area-inset-bottom, 8px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      padding: '12px 20px 10px',
     }}>
-      <div style={{ display: 'flex', justifyContent: 'space-around', padding: '10px 12px 6px' }}>
-        {items.map(it => {
-          const on = active === it.id;
-          const c = on ? SK.gold : SK.textMute;
-          return (
-            <button key={it.id} onClick={() => onNav(it.id)} style={{
-              background: 'none', border: 'none', cursor: 'pointer',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-              padding: '8px 12px', minHeight: 44,
-            }}>
-              <it.Icon s={22} c={c} filled={on}/>
-              <span style={{
-                fontFamily: SK.fBody, fontSize: 11, fontWeight: on ? 700 : 500,
-                color: c, letterSpacing: 0.3, textTransform: 'uppercase',
-              }}>{it.label}</span>
-            </button>
-          );
-        })}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <LogoMark size={22}/>
+        <span style={{
+          fontFamily: SK.fHead, fontSize: 16, fontWeight: 700,
+          color: SK.text, textTransform: 'lowercase', letterSpacing: 0.3,
+        }}>stickio</span>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <span style={{
@@ -74,7 +60,7 @@ function BottomNav({ active, onNav }) {
 
   return (
     <div style={{ flexShrink: 0, background: SK.surface, borderBottom: `1px solid ${SK.border}` }}>
-      {bar}
+      {topBar}
 
       {open && (
         <>
@@ -83,14 +69,14 @@ function BottomNav({ active, onNav }) {
             onClick={() => setOpen(false)}
             style={{ position: 'absolute', inset: 0, zIndex: 40, background: 'rgba(0,0,0,0.55)' }}
           />
-          {/* Drawer — cae hacia abajo */}
+          {/* Drawer */}
           <div style={{
             position: 'absolute', top: 0, left: 0, right: 0, zIndex: 50,
             background: SK.surface,
             borderBottom: `1px solid ${SK.border}`,
             borderRadius: '0 0 18px 18px',
           }}>
-            {bar}
+            {topBar}
             <div style={{
               display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
               gap: 8, padding: '8px 16px 20px',
