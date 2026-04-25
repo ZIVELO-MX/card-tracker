@@ -819,12 +819,12 @@ function App() {
   const renderScreen = () => {
     if (isMobile) {
       switch (nav) {
-        case 'home':        return <DashboardScreen onNav={handleNav} onNavToCountry={handleNavToCountry} stats={stats} collection={collection} activityLog={activityLog} notifications={notifications}/>;
+        case 'home':        return <DashboardScreen onNav={handleNav} onNavToCountry={handleNavToCountry} stats={stats} collection={collection} activityLog={activityLog} userId={userId} notifications={notifications}/>;
         case 'album':       return <AlbumScreen onNav={handleNav} initialCountry={albumCountry} collection={collection} setCollection={setCollection} onStickerChange={syncSticker} notifications={notifications}/>;
         case 'trade':       return <TradeScreen onNav={handleNav} collection={collection} userData={userData} notifications={notifications} tradeOffers={tradeOffers} onTradeOffersChange={setTradeOffers} userId={userId}/>;
         case 'marketplace': return <MarketplaceScreen onNav={handleNav} userData={userData} collection={collection} notifications={notifications} marketplaceListings={marketplaceListings} onMarketplaceListingsChange={setMarketplaceListings} userId={userId}/>;
         case 'profile':     return <ProfileScreen onNav={handleNav} stats={stats} achievements={achievements} userData={userData} onUpdateUser={handleUpdateUser} notifications={notifications} tradeOffers={tradeOffers} userId={userId} collection={collection} activityLog={activityLog}/>;
-        default:        return <DashboardScreen onNav={handleNav} onNavToCountry={handleNavToCountry} stats={stats} collection={collection} activityLog={activityLog} notifications={notifications}/>;
+        default:        return <DashboardScreen onNav={handleNav} onNavToCountry={handleNavToCountry} stats={stats} collection={collection} activityLog={activityLog} userId={userId} notifications={notifications}/>;
       }
     }
     switch (nav) {

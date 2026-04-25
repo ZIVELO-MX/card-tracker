@@ -832,7 +832,7 @@ function ResetPasswordRequestScreen({ onBack }) {
 // ─────────────────────────────────────────────────────────────
 // SCREEN 2 — Dashboard
 // ─────────────────────────────────────────────────────────────
-function DashboardScreen({ onNav, onNavToCountry, stats, collection = {}, activityLog = [] }) {
+function DashboardScreen({ onNav, onNavToCountry, stats, collection = {}, activityLog = [], userId = null }) {
   const { have, total, missing, duplicates } = stats;
   const pct = ((have / total) * 100).toFixed(1);
   const [unreadCount, setUnreadCount] = React.useState(() => window.getUnreadCount ? window.getUnreadCount() : 0);
@@ -1061,7 +1061,7 @@ function DashboardScreen({ onNav, onNavToCountry, stats, collection = {}, activi
               <div style={{ fontSize: 10, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600 }}>continúa coleccionando</div>
               <div style={{ fontFamily: SK.fHead, fontSize: 20, fontWeight: 700, color: SK.text, marginTop: 2 }}>Por selección</div>
             </div>
-            <button style={{ background: 'none', border: 'none', color: SK.gold, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 2, fontSize: 12, fontWeight: 600 }}>
+            <button onClick={() => onNav('album')} style={{ background: 'none', border: 'none', color: SK.gold, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 2, fontSize: 12, fontWeight: 600 }}>
               Ver todas <Icon.ChevronRight s={14} c={SK.gold}/>
             </button>
           </div>
@@ -1096,7 +1096,7 @@ function DashboardScreen({ onNav, onNavToCountry, stats, collection = {}, activi
       </div>
 
       {/* FAB */}
-      <button style={{
+      <button onClick={() => onNav('album')} style={{
         position: 'absolute', right: 20, bottom: 96,
         width: 56, height: 56, borderRadius: 28,
         background: SK.gold, border: 'none',
@@ -1171,10 +1171,13 @@ function TeamCard({ country, onNavToCountry }) {
 
 function ActivityRow({ icon, text, time, last }) {
   const IconMap = {
-    check: <Icon.Check s={14} c={SK.green}/>,
-    swap: <Icon.Swap s={14} c={SK.gold}/>,
-    trophy: <Icon.Trophy s={14} c={SK.gold}/>,
-    dup: <Icon.Copy s={14} c={SK.coral}/>,
+    check:   <Icon.Check s={14} c={SK.green}/>,
+    swap:    <Icon.Swap s={14} c={SK.gold}/>,
+    trophy:  <Icon.Trophy s={14} c={SK.gold}/>,
+    dup:     <Icon.Copy s={14} c={SK.coral}/>,
+    remove:  <Icon.Minus s={14} c={SK.textMute}/>,
+    listing: <Icon.Store s={14} c={SK.gold}/>,
+    closed:  <Icon.Check s={14} c={SK.textMute}/>,
   };
   return (
     <div style={{
@@ -1193,7 +1196,7 @@ function ActivityRow({ icon, text, time, last }) {
   );
 }
 
-Object.assign(window, { LoginScreen, RegisterScreen, ResetPasswordRequestScreen, ResetPasswordScreen, DashboardScreen, PhoneShell, BottomNav, MobileStatus, MOBILE_W, MOBILE_H });
+Object.assign(window, { LoginScreen, RegisterScreen, ResetPasswordRequestScreen, ResetPasswordScreen, DashboardScreen, PhoneShell, BottomNav, MOBILE_W, MOBILE_H });
 // ─────────────────────────────────────────────────────────────
 // SCREEN 1C — Reset Password
 // ─────────────────────────────────────────────────────────────

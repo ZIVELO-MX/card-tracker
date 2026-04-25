@@ -7,13 +7,8 @@ function stickersFor(country, startNum) {
   const arr = [];
   for (let i = 0; i < country.total; i++) {
     const num = i + 1; // local 1-20 numbering per country section
-    let state = 'missing';
-    let count = 0;
-    if (i < country.have) {
-      state = 'have';
-      count = 1;
-      if ((num * 7) % 11 === 0) { state = 'duplicate'; count = 2 + (num % 3); }
-    }
+    const state = 'missing';
+    const count = 0;
 
     let type = 'jugador';
     let player = '';
@@ -65,8 +60,8 @@ function specialStickers() {
     num: i,
     player: SPECIAL_NAMES[i] || `FWC ${i}`,
     country: null,
-    state: i < 8 ? 'have' : 'missing',
-    count: 1,
+    state: 'missing',
+    count: 0,
     type: 'especial',
     subtype: SPECIAL_SUBTYPES[i],
   }));
@@ -85,8 +80,8 @@ function ccStickers() {
     num: i + 1,
     player: CC_NAMES[i],
     country: null,
-    state: i < 4 ? 'have' : 'missing',
-    count: 1,
+    state: 'missing',
+    count: 0,
     type: 'especial',
     subtype: i % 2 === 0 ? 'stadium' : 'trophy',
   }));
