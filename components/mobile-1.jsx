@@ -1040,12 +1040,11 @@ function DashboardScreen({ onNav, onNavToCountry, stats, collection = {}, activi
   return (
     <PhoneShell active="home" onNav={onNav}>
       <div style={{ flex: 1, overflow: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 100px)' }}>
-        {/* Header */}
+        {/* Bell */}
         <div style={{
           padding: '10px 20px 12px',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
         }}>
-          <Logo size={24}/>
           <button
             onClick={() => {
               setBellOpen(true);
