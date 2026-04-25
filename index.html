@@ -10,8 +10,8 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="img/stickio-favicon.svg" type="image/svg+xml">
 <link rel="icon" href="img/stickio-favicon.png" type="image/png">
-<link rel="apple-touch-icon" href="img/stickio-app-icon.svg">
-<link rel="apple-touch-icon" sizes="180x180" href="img/stickio-favicon.png">
+<link rel="apple-touch-icon" sizes="180x180" href="img/stickio-pwa-icon-512.png">
+<link rel="apple-touch-icon" href="img/stickio-pwa-icon-512.png">
 <link rel="mask-icon" href="img/stickio-favicon.svg" color="#E7B10A">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0A1628">
@@ -415,6 +415,7 @@ async function updateUserProfile(userId, patch = {}) {
     location: String(patch.location || '').trim() || null,
     phone: phone || null,
     whatsapp: whatsapp || null,
+    ...(patch.country_code !== undefined && { country_code: patch.country_code || null }),
     updated_at: new Date(),
   };
 
