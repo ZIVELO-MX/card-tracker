@@ -67,23 +67,24 @@ function specialStickers() {
   }));
 }
 
-// CC — Coca-Cola (nums 1-12)
+// CC — Coca-Cola (nums 1-14)
 const CC_NAMES = [
-  'Coca-Cola × FIFA', 'Refresca el Juego', 'Sabor Mundial', 'Fan Zone',
-  'Celebración', 'Gol de Oro', 'Pausa Perfecta', 'The Coca-Cola Cup',
-  'Red United', 'Jugando Juntos', 'El Momento', 'Sin Límites',
+  'Lamine Yamal', 'Joshua Kimmich', 'Harry Kane', 'Santiago Giménez',
+  'Gvardiol', 'Federico Valverde', 'Jefferson Lerma', 'Enner Valencia',
+  'Gabriel', 'Virgil van Dijk', 'Alphonso Davies', 'Emiliano Martínez',
+  'Raúl Jiménez', 'Lautaro Martínez',
 ];
 
 function ccStickers() {
-  return Array.from({ length: 12 }, (_, i) => ({
+  return Array.from({ length: 14 }, (_, i) => ({
     id: `CC${String(i + 1).padStart(2, '0')}`,
     num: i + 1,
     player: CC_NAMES[i],
     country: null,
     state: 'missing',
     count: 0,
-    type: 'especial',
-    subtype: i % 2 === 0 ? 'stadium' : 'trophy',
+    type: 'jugador',
+    subtype: null,
   }));
 }
 
@@ -107,7 +108,7 @@ function AlbumScreen({ onNav, initialCountry = null, collection = {}, setCollect
       country: c,
       stickers: stickersFor(c),
     })),
-    { id: 'cc', label: 'Coca-Cola', flag: '🥤', total: 12, stickers: ccStickers() },
+    { id: 'cc', label: 'Coca-Cola', flag: '🥤', total: 14, stickers: ccStickers() },
   ];
 
   const [countryOrder, setCountryOrder] = React.useState(() => {

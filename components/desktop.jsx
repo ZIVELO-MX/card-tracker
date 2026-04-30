@@ -683,7 +683,7 @@ function CocaColaRailEntry({ active, onSelect }) {
       <span style={{ fontSize: 20 }}>🥤</span>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontFamily: SK.fHead, fontSize: 12, fontWeight: 700, textTransform: 'uppercase', color: active ? SK.gold : hov ? SK.text : SK.textMute, letterSpacing: 0.5, transition: 'color 0.15s ease-out' }}>Coca-Cola</div>
-        <div style={{ fontFamily: SK.fMono, fontSize: 10, color: SK.textMute, marginTop: 1 }}>CC 001–012 · Patrocinador</div>
+        <div style={{ fontFamily: SK.fMono, fontSize: 10, color: SK.textMute, marginTop: 1 }}>CC 001–014 · Patrocinador</div>
       </div>
     </button>
   );
@@ -771,7 +771,7 @@ function AlbumDesktop({ onNav, initialCountry = null, theme, onToggleTheme, coll
   const isCoca = activeCountry === '__coca_cola__';
   const country = (!isEspeciales && !isCoca)
     ? (COUNTRIES.find(c => c.code === activeCountry) || COUNTRIES[0])
-    : { flag: isCoca ? '🥤' : '🏆', name: isCoca ? 'Coca-Cola' : 'Copa & Sedes 2026', total: isCoca ? 12 : 20, group: isCoca ? 'CC' : 'FWC', color: isCoca ? '#F40009' : SK.gold };
+    : { flag: isCoca ? '🥤' : '🏆', name: isCoca ? 'Coca-Cola' : 'Copa & Sedes 2026', total: isCoca ? 14 : 20, group: isCoca ? 'CC' : 'FWC', color: isCoca ? '#F40009' : SK.gold };
   const stickers = isEspeciales
     ? specialStickers()
     : isCoca
@@ -950,7 +950,7 @@ function AlbumDesktop({ onNav, initialCountry = null, theme, onToggleTheme, coll
             <div style={{ fontSize: 64 }}>{country.flag}</div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 11, color: SK.textMute, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 600 }}>
-                {isEspeciales ? 'FWC · 000–019' : isCoca ? 'CC · 001–012 · Patrocinador' : `Grupo ${country.group} · Selección`}
+                {isEspeciales ? 'FWC · 000–019' : isCoca ? 'CC · 001–014 · Patrocinador' : `Grupo ${country.group} · Selección`}
               </div>
               <div style={{ fontFamily: SK.fHead, fontSize: 34, fontWeight: 700, color: SK.text, textTransform: 'uppercase', letterSpacing: 0.5, lineHeight: 1.05 }}>
                 {country.name}

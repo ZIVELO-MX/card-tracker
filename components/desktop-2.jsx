@@ -1150,8 +1150,7 @@ function stickerInfoFromId(id) {
   }
   if (id.startsWith('CC')) {
     const num = parseInt(id.slice(2), 10);
-    const subtype = num % 2 === 0 ? 'stadium' : 'trophy';
-    return { num, label: `Coca-Cola · #${id.slice(2)}`, country: null, type: 'especial', subtype };
+    return { num, label: `Coca-Cola · #${id.slice(2)}`, country: null, type: 'jugador', subtype: null };
   }
   return { num: 0, label: id, country: null, type: 'jugador', subtype: null };
 }
