@@ -38,15 +38,10 @@ function LoginDesktop({ onLogin, onRegister, onForgot }) {
     const raw = (value || '').trim();
     if (!raw) return null;
     if (raw.includes('@')) return raw;
-    if (!window.supabase?.from) return null;
-    const { data, error } = await window.supabase
-      .from('profiles')
-      .select('*')
-      .or(`username.eq.${raw},id.eq.${raw}`)
-      .limit(1)
-      .maybeSingle();
+    if (!window.supabase?.rpc) return null;
+    const { data, error } = await window.supabase.rpc('get_email_by_username', { p_username: raw.toLowerCase() });
     if (error || !data) return null;
-    return data.email || null;
+    return data;
   };
 
   const handleSubmit = async () => {

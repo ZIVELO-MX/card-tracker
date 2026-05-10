@@ -124,7 +124,7 @@ window.Logo = function Logo({ size = 28 }) {
 };
 
 function computeStats(collection) {
-  const TOTAL = 992; // 20 FWC + 960 países (48×20) + 12 CC
+  const TOTAL = 994; // 20 FWC + 960 países (48×20) + 12 CC + 2
   let have = 0, duplicates = 0;
   Object.values(collection).forEach(qty => {
     if (qty >= 1) have++;
