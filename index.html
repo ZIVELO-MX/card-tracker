@@ -650,9 +650,11 @@ function App() {
         data.forEach(r => { remote[r.sticker_id] = r.quantity; });
         let local = {};
         try { local = JSON.parse(localStorage.getItem('stickio_collection') || '{}'); } catch {}
-        const merged = { ...local, ...remote };
+        const allKeys = new Set([...Object.keys(local), ...Object.keys(remote)]);
+        const merged = {};
+        allKeys.forEach(key => { merged[key] = Math.max(local[key] || 0, remote[key] || 0); });
         setCollection(merged);
-        const toSync = Object.entries(local).filter(([id, qty]) => !remote[id] && qty > 0);
+        const toSync = Object.entries(local).filter(([id, qty]) => qty > (remote[id] || 0));
         if (toSync.length > 0) {
           const rows = toSync.map(([sticker_id, quantity]) => ({ user_id: userId, sticker_id, quantity, updated_at: new Date() }));
           window.supabase.from('collections').upsert(rows);
