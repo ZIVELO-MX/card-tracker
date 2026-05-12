@@ -1612,6 +1612,27 @@ function ProfileDesktop({ onNav, stats, achievements = [], userData, theme, onTo
                 fontFamily: SK.fHead, fontWeight: 700, fontSize: 13,
                 textTransform: 'uppercase', letterSpacing: 1, cursor: 'pointer',
               }}>Compartir perfil</button>
+              <button onClick={() => {
+                const sections = [
+                  { label: 'FWC', stickers: (window.specialStickers || (() => []))() },
+                  ...COUNTRIES.map(c => ({ label: c.code, stickers: (window.stickersFor || (() => []))(c) })),
+                  { label: 'CC', stickers: (window.ccStickers || (() => []))() },
+                ];
+                const lines = [];
+                sections.forEach(({ label, stickers }) => {
+                  const ids = stickers.filter(s => !(collection[s.id] > 0)).map(s => s.id);
+                  if (ids.length > 0) lines.push(`${label}: ${ids.join(', ')}`);
+                });
+                const missingCount = lines.reduce((acc, l) => acc + l.split(', ').length, 0);
+                const name = (userData?.name || userData?.username || 'Coleccionista').trim();
+                const text = `¡Hola! Soy ${name} en Stickio 📘\nMe faltan ${missingCount} estampas del álbum FIFA WC 2026:\n\n${lines.join('\n')}\n\n¿Tienes alguna para intercambiar?`;
+                window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+              }} style={{
+                padding: '10px 20px', background: '#25D366', color: '#fff',
+                border: 'none', borderRadius: 10,
+                fontFamily: SK.fHead, fontWeight: 700, fontSize: 13,
+                textTransform: 'uppercase', letterSpacing: 1, cursor: 'pointer',
+              }}>Compartir faltantes por WhatsApp</button>
             </div>
           </div>
           {/* Big progress ring */}

@@ -1592,6 +1592,29 @@ function ProfileScreen({ onNav, stats, achievements = [], userData, onUpdateUser
               textTransform: 'uppercase', letterSpacing: 1,
               cursor: 'pointer',
             }}>Compartir perfil</button>
+            <button onClick={() => {
+              const sections = [
+                { label: 'FWC', stickers: specialStickers() },
+                ...COUNTRIES.map(c => ({ label: c.code, stickers: stickersFor(c) })),
+                { label: 'CC', stickers: ccStickers() },
+              ];
+              const lines = [];
+              sections.forEach(({ label, stickers }) => {
+                const ids = stickers.filter(s => !(collection[s.id] > 0)).map(s => s.id);
+                if (ids.length > 0) lines.push(`${label}: ${ids.join(', ')}`);
+              });
+              const missingCount = lines.reduce((acc, l) => acc + l.split(', ').length, 0);
+              const name = (userData?.name || userData?.username || 'Coleccionista').trim();
+              const text = `¡Hola! Soy ${name} en Stickio 📘\nMe faltan ${missingCount} estampas del álbum FIFA WC 2026:\n\n${lines.join('\n')}\n\n¿Tienes alguna para intercambiar?`;
+              window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+            }} style={{
+              width: '100%', padding: '12px 0',
+              background: '#25D366', color: '#fff',
+              border: 'none', borderRadius: 10,
+              fontFamily: SK.fHead, fontWeight: 700, fontSize: 13,
+              textTransform: 'uppercase', letterSpacing: 1,
+              cursor: 'pointer',
+            }}>Compartir faltantes por WhatsApp</button>
             <button onClick={async () => {
               if (!window.confirm('¿Cerrar sesión?')) return;
               if (window.supabase?.auth) await window.supabase.auth.signOut();
