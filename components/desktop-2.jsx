@@ -1613,17 +1613,21 @@ function ProfileDesktop({ onNav, stats, achievements = [], userData, theme, onTo
                 textTransform: 'uppercase', letterSpacing: 1, cursor: 'pointer',
               }}>Compartir perfil</button>
               <button onClick={() => {
-                const sections = [
-                  { label: 'FWC', stickers: (window.specialStickers || (() => []))() },
-                  ...COUNTRIES.map(c => ({ label: c.code, stickers: (window.stickersFor || (() => []))(c) })),
-                  { label: 'CC', stickers: (window.ccStickers || (() => []))() },
+                const _special = window.specialStickers ? window.specialStickers() : [];
+                const _stickersFor = window.stickersFor || (() => []);
+                const _cc = window.ccStickers ? window.ccStickers() : [];
+                const fwcMissing = _special.filter(s => !(collection[s.id] > 0)).map(s => s.id);
+                const countryLines = COUNTRIES.map(c => {
+                  const nums = _stickersFor(c).filter(s => !(collection[s.id] > 0)).map(s => String(s.num).padStart(2, '0'));
+                  return nums.length > 0 ? `${c.name}: ${nums.join(', ')}` : null;
+                }).filter(Boolean);
+                const ccNums = _cc.filter(s => !(collection[s.id] > 0)).map(s => String(s.num).padStart(2, '0'));
+                const lines = [
+                  ...(fwcMissing.length > 0 ? [`Copa & Sedes 2026: ${fwcMissing.join(', ')}`] : []),
+                  ...countryLines,
+                  ...(ccNums.length > 0 ? [`Coca-Cola: ${ccNums.join(', ')}`] : []),
                 ];
-                const lines = [];
-                sections.forEach(({ label, stickers }) => {
-                  const ids = stickers.filter(s => !(collection[s.id] > 0)).map(s => s.id);
-                  if (ids.length > 0) lines.push(`${label}: ${ids.join(', ')}`);
-                });
-                const missingCount = lines.reduce((acc, l) => acc + l.split(', ').length, 0);
+                const missingCount = lines.reduce((acc, l) => acc + l.split(':')[1].split(', ').length, 0);
                 const name = (userData?.name || userData?.username || 'Coleccionista').trim();
                 const text = `¡Hola! Soy ${name} en Stickio 📘\nMe faltan ${missingCount} estampas del álbum FIFA WC 2026:\n\n${lines.join('\n')}\n\n¿Tienes alguna para intercambiar?`;
                 window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
