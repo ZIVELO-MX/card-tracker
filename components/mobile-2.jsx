@@ -1593,16 +1593,17 @@ function ProfileScreen({ onNav, stats, achievements = [], userData, onUpdateUser
               cursor: 'pointer',
             }}>Compartir perfil</button>
             <button onClick={() => {
-              const sections = [
-                { label: 'Copa & Sedes 2026', stickers: specialStickers() },
-                ...COUNTRIES.map(c => ({ label: c.name, stickers: stickersFor(c) })),
-                { label: 'Coca-Cola', stickers: ccStickers() },
+              const fwcMissing = specialStickers().filter(s => !(collection[s.id] > 0)).map(s => s.id);
+              const countryLines = COUNTRIES.map(c => {
+                const nums = stickersFor(c).filter(s => !(collection[s.id] > 0)).map(s => String(s.num).padStart(2, '0'));
+                return nums.length > 0 ? `${c.name}: ${nums.join(', ')}` : null;
+              }).filter(Boolean);
+              const ccNums = ccStickers().filter(s => !(collection[s.id] > 0)).map(s => String(s.num).padStart(2, '0'));
+              const lines = [
+                ...(fwcMissing.length > 0 ? [`Copa & Sedes 2026: ${fwcMissing.join(', ')}`] : []),
+                ...countryLines,
+                ...(ccNums.length > 0 ? [`Coca-Cola: ${ccNums.join(', ')}`] : []),
               ];
-              const lines = [];
-              sections.forEach(({ label, stickers }) => {
-                const nums = stickers.filter(s => !(collection[s.id] > 0)).map(s => String(s.num).padStart(2, '0'));
-                if (nums.length > 0) lines.push(`${label}: ${nums.join(', ')}`);
-              });
               const missingCount = lines.reduce((acc, l) => acc + l.split(':')[1].split(', ').length, 0);
               const name = (userData?.name || userData?.username || 'Coleccionista').trim();
               const text = `¡Hola! Soy ${name} en Stickio 📘\nMe faltan ${missingCount} estampas del álbum FIFA WC 2026:\n\n${lines.join('\n')}\n\n¿Tienes alguna para intercambiar?`;
