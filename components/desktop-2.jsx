@@ -1614,16 +1614,16 @@ function ProfileDesktop({ onNav, stats, achievements = [], userData, theme, onTo
               }}>Compartir perfil</button>
               <button onClick={() => {
                 const sections = [
-                  { label: 'FWC', stickers: (window.specialStickers || (() => []))() },
-                  ...COUNTRIES.map(c => ({ label: c.code, stickers: (window.stickersFor || (() => []))(c) })),
-                  { label: 'CC', stickers: (window.ccStickers || (() => []))() },
+                  { label: 'Copa & Sedes 2026', stickers: (window.specialStickers || (() => []))() },
+                  ...COUNTRIES.map(c => ({ label: c.name, stickers: (window.stickersFor || (() => []))(c) })),
+                  { label: 'Coca-Cola', stickers: (window.ccStickers || (() => []))() },
                 ];
                 const lines = [];
                 sections.forEach(({ label, stickers }) => {
-                  const ids = stickers.filter(s => !(collection[s.id] > 0)).map(s => s.id);
-                  if (ids.length > 0) lines.push(`${label}: ${ids.join(', ')}`);
+                  const nums = stickers.filter(s => !(collection[s.id] > 0)).map(s => String(s.num).padStart(2, '0'));
+                  if (nums.length > 0) lines.push(`${label}: ${nums.join(', ')}`);
                 });
-                const missingCount = lines.reduce((acc, l) => acc + l.split(', ').length, 0);
+                const missingCount = lines.reduce((acc, l) => acc + l.split(':')[1].split(', ').length, 0);
                 const name = (userData?.name || userData?.username || 'Coleccionista').trim();
                 const text = `¡Hola! Soy ${name} en Stickio 📘\nMe faltan ${missingCount} estampas del álbum FIFA WC 2026:\n\n${lines.join('\n')}\n\n¿Tienes alguna para intercambiar?`;
                 window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
