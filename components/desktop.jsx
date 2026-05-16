@@ -773,10 +773,10 @@ function AlbumDesktop({ onNav, initialCountry = null, theme, onToggleTheme, coll
     ? (COUNTRIES.find(c => c.code === activeCountry) || COUNTRIES[0])
     : { flag: isCoca ? '🥤' : '🏆', name: isCoca ? 'Coca-Cola' : 'Copa & Sedes 2026', total: isCoca ? 14 : 20, group: isCoca ? 'CC' : 'FWC', color: isCoca ? '#F40009' : SK.gold };
   const stickers = isEspeciales
-    ? specialStickers()
+    ? (window.specialStickers || specialStickers)()
     : isCoca
-    ? ccStickers()
-    : stickersFor(country);
+    ? (window.ccStickers || ccStickers)()
+    : (window.stickersFor || stickersFor)(country);
 
   const getQty = (s) => s.id in collection ? collection[s.id] : 0;
 
@@ -791,9 +791,12 @@ function AlbumDesktop({ onNav, initialCountry = null, theme, onToggleTheme, coll
   };
 
   const handleAddDuplicate = () => {
-    const nextQty = (collection[dupModal.id] ?? getQty(dupModal)) + 1;
-    setCollection(prev => ({ ...prev, [dupModal.id]: nextQty }));
-    onStickerChange(dupModal.id, nextQty);
+    setCollection(prev => {
+      const current = prev[dupModal.id] ?? getQty(dupModal);
+      const nextQty = current + 1;
+      onStickerChange(dupModal.id, nextQty);
+      return { ...prev, [dupModal.id]: nextQty };
+    });
     setDupModal(null);
   };
 

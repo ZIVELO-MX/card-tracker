@@ -1103,7 +1103,7 @@ function ScanTab({ collection = {}, userId = null, onTradeOffersChange = () => {
       const { data: profile, error: pErr } = await window.supabase
         .from('profiles')
         .select('id, username, display_name')
-        .ilike('username', `%${clean}%`)
+        .ilike('username', clean)
         .maybeSingle();
       if (pErr || !profile) {
         setError('Usuario no encontrado');
@@ -1139,7 +1139,7 @@ function ScanTab({ collection = {}, userId = null, onTradeOffersChange = () => {
   const needFromPartner = React.useMemo(() => {
     if (!partner) return [];
     return Object.entries(partner.collectionMap || {})
-      .filter(([id]) => (collection[id] || 0) === 0)
+      .filter(([id, qty]) => qty >= 2 && (collection[id] || 0) === 0)
       .map(([id, qty]) => ({ id, qty }));
   }, [partner, collection]);
   const theyNeedFromMe = React.useMemo(() => {
@@ -1789,10 +1789,8 @@ function ProfileScreen({ onNav, stats, achievements = [], userData, onUpdateUser
                 setErrorMsg('');
                 try {
                   const { error, message } = await onUpdateUser({
-                    ...userData,
                     name: form.name,
                     username: form.username,
-                    email: form.email,
                     bio: form.bio,
                     location: form.location,
                     phone: window.normalizeIntlPhone ? window.normalizeIntlPhone(form.phone) : form.phone,
