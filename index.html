@@ -641,6 +641,7 @@ function App() {
     window.supabase.from('collections')
       .select('sticker_id, quantity')
       .eq('user_id', userId)
+      .limit(2000)
       .then(({ data, error }) => {
         if (error || !data) {
           setCollectionReady(true);
@@ -657,7 +658,7 @@ function App() {
         const toSync = Object.entries(local).filter(([id, qty]) => qty > (remote[id] || 0));
         if (toSync.length > 0) {
           const rows = toSync.map(([sticker_id, quantity]) => ({ user_id: userId, sticker_id, quantity, updated_at: new Date() }));
-          window.supabase.from('collections').upsert(rows);
+          window.supabase.from('collections').upsert(rows, { onConflict: 'user_id, sticker_id' });
         }
         setCollectionReady(true);
       });
@@ -838,7 +839,7 @@ function App() {
         .eq('user_id', userId).eq('sticker_id', stickerId);
     } else {
       await window.supabase.from('collections')
-        .upsert({ user_id: userId, sticker_id: stickerId, quantity, updated_at: new Date() });
+        .upsert({ user_id: userId, sticker_id: stickerId, quantity, updated_at: new Date() }, { onConflict: 'user_id, sticker_id' });
     }
   };
 
