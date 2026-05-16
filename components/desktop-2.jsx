@@ -1491,7 +1491,7 @@ function TradeHistoryDesktop({ tradeOffers = [], userId = null, onTradeOffersCha
 // DESKTOP — Profile
 // ─────────────────────────────────────────────────────────────
 function ProfileDesktop({ onNav, stats, achievements = [], userData, theme, onToggleTheme, onUpdateUser = () => {}, collection = {}, activityLog = [], tradeOffers = [], userId = null }) {
-  const { have, total, duplicates } = stats;
+  const { have = 0, total = 994, duplicates = 0 } = stats || {};
   const pct = ((have / total) * 100).toFixed(1);
   const [editOpen, setEditOpen] = React.useState(false);
 
